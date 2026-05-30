@@ -4,16 +4,17 @@ import { Component, OnInit } from '@angular/core';
 type Employee = {
   id: number;
   name: string;
-  email: string;
-  riskScore: number;
+  currentRole: string;
+  department: string;
   skills: Array<{ id: number; name: string; proficiency: number }>;
 };
 
 type Vacancy = {
   id: number;
   title: string;
-  path: string;
-  matchScore: number;
+  department: string;
+  company: string;
+  skills: Array<{ id: number; name: string; weight: number }>;
 };
 
 @Component({
@@ -73,5 +74,9 @@ export class AppComponent implements OnInit {
 
   formatSkills(skills: Array<{ id: number; name: string; proficiency: number }>): string {
     return skills.map((skill) => `${skill.name} (${skill.proficiency})`).join(', ');
+  }
+
+  formatVacancySkills(skills: Array<{ id: number; name: string; weight: number }>): string {
+    return skills.map((skill) => `${skill.name} (${skill.weight})`).join(', ');
   }
 }

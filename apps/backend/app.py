@@ -29,13 +29,17 @@ def health_check():
 @app.get("/api/employees")
 def list_employees():
     employees = query(
-        "SELECT id, name, email, risk_score FROM Employee ORDER BY risk_score DESC"
+        """
+        SELECT id, name, current_role, department
+        FROM employees
+        ORDER BY name
+        """
     )
     skills = query(
         """
         SELECT es.employee_id, s.id AS skill_id, s.name AS skill_name, es.proficiency
-        FROM EmployeeSkill es
-        JOIN Skill s ON s.id = es.skill_id
+        FROM employee_skills es
+        JOIN skills s ON s.id = es.skill_id
         ORDER BY es.employee_id, s.name
         """
     )
@@ -55,8 +59,8 @@ def list_employees():
             {
                 "id": employee["id"],
                 "name": employee["name"],
-                "email": employee["email"],
-                "riskScore": employee["risk_score"],
+                "currentRole": employee["current_role"],
+                "department": employee["department"],
                 "skills": skills_by_employee[employee["id"]],
             }
             for employee in employees
@@ -67,16 +71,39 @@ def list_employees():
 @app.get("/api/vacancies")
 def list_vacancies():
     vacancies = query(
-        "SELECT id, title, path, match_score FROM Vacancy ORDER BY match_score DESC"
+        """
+        SELECT id, title, department, company
+        FROM vacancies
+        ORDER BY title
+        """
     )
+    skills = query(
+        """
+        SELECT vs.vacancy_id, s.id AS skill_id, s.name AS skill_name, vs.weight
+        FROM vacancy_skills vs
+        JOIN skills s ON s.id = vs.skill_id
+        ORDER BY vs.vacancy_id, vs.weight DESC
+        """
+    )
+
+    skills_by_vacancy: dict[int, list[dict]] = defaultdict(list)
+    for row in skills:
+        skills_by_vacancy[row["vacancy_id"]].append(
+            {
+                "id": row["skill_id"],
+                "name": row["skill_name"],
+                "weight": row["weight"],
+            }
+        )
 
     return jsonify(
         [
             {
                 "id": vacancy["id"],
                 "title": vacancy["title"],
-                "path": vacancy["path"],
-                "matchScore": vacancy["match_score"],
+                "department": vacancy["department"],
+                "company": vacancy["company"],
+                "skills": skills_by_vacancy[vacancy["id"]],
             }
             for vacancy in vacancies
         ]

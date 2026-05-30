@@ -1,3 +1,6 @@
+-- Workforce Resilience Planner schema (SQLite).
+-- Canonical copy lives at apps/backend/db/schema.sql
+
 PRAGMA foreign_keys = OFF;
 
 DROP TABLE IF EXISTS vacancy_skills;
@@ -10,12 +13,6 @@ DROP TABLE IF EXISTS vacancies;
 DROP TABLE IF EXISTS employees;
 DROP TABLE IF EXISTS skills;
 DROP TABLE IF EXISTS occupations;
-
-DROP TABLE IF EXISTS Recommendation;
-DROP TABLE IF EXISTS EmployeeSkill;
-DROP TABLE IF EXISTS Vacancy;
-DROP TABLE IF EXISTS Skill;
-DROP TABLE IF EXISTS Employee;
 
 PRAGMA foreign_keys = ON;
 

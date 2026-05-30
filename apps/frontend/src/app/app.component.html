@@ -9,23 +9,23 @@
 
   <section *ngIf="!loading && !error" class="grid">
     <article class="card">
-      <h2>At-Risk Employees</h2>
+      <h2>Employees</h2>
       <ul>
         <li *ngFor="let employee of employees">
-          <strong>{{ employee.name }}</strong> ({{ employee.email }})
-          <span>Risk: {{ employee.riskScore }}</span>
+          <strong>{{ employee.name }}</strong> ({{ employee.currentRole }})
+          <span>{{ employee.department }}</span>
           <small>Skills: {{ formatSkills(employee.skills) }}</small>
         </li>
       </ul>
     </article>
 
     <article class="card">
-      <h2>Open Recommendations</h2>
+      <h2>Open Vacancies</h2>
       <ul>
         <li *ngFor="let vacancy of vacancies">
           <strong>{{ vacancy.title }}</strong>
-          <span>{{ vacancy.path }}</span>
-          <small>Match: {{ vacancy.matchScore }}%</small>
+          <span>{{ vacancy.department }} · {{ vacancy.company }}</span>
+          <small>Skills: {{ formatVacancySkills(vacancy.skills) }}</small>
         </li>
       </ul>
     </article>
