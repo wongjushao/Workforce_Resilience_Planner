@@ -3,6 +3,8 @@
 
 PRAGMA foreign_keys = OFF;
 
+DROP TABLE IF EXISTS at_risk_submissions;
+DROP TABLE IF EXISTS intake_documents;
 DROP TABLE IF EXISTS vacancy_skills;
 DROP TABLE IF EXISTS employee_skills;
 DROP TABLE IF EXISTS technologies;
@@ -64,6 +66,30 @@ CREATE TABLE technologies (
   hot_technology INTEGER,
   in_demand INTEGER,
   FOREIGN KEY (occupation_id) REFERENCES occupations (id)
+);
+
+CREATE TABLE intake_documents (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  original_filename TEXT NOT NULL,
+  file_type TEXT NOT NULL,
+  stored_path TEXT NOT NULL,
+  file_size INTEGER,
+  extracted_text TEXT,
+  row_count INTEGER,
+  status TEXT NOT NULL DEFAULT 'received',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE at_risk_submissions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  current_role TEXT,
+  department TEXT,
+  email TEXT,
+  skills TEXT,
+  departure_reason TEXT NOT NULL,
+  source TEXT NOT NULL DEFAULT 'manual',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE TABLE employees (

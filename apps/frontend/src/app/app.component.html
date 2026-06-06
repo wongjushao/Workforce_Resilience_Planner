@@ -1,32 +1,159 @@
 <main class="page">
   <header>
     <h1>Workforce Resilience Planner</h1>
-    <p>Angular + Flask + SQLite starter dashboard</p>
+    <p>HR intake for industry reports and at-risk employee details</p>
   </header>
 
-  <section *ngIf="loading" class="card">Loading data...</section>
-  <section *ngIf="error" class="card error">{{ error }}</section>
+  <section class="intake-panel card">
+    <p *ngIf="intakeLoading" class="hint">Loading intake history...</p>
+    <p *ngIf="intakeError" class="message error">{{ intakeError }}</p>
+    <nav class="tabs" aria-label="Intake options">
+      <button
+        type="button"
+        class="tab"
+        [class.active]="activeTab === 'documents'"
+        (click)="setTab('documents')"
+      >
+        Upload Documents
+      </button>
+      <button
+        type="button"
+        class="tab"
+        [class.active]="activeTab === 'manual'"
+        (click)="setTab('manual')"
+      >
+        Enter Employee Details
+      </button>
+    </nav>
 
-  <section *ngIf="!loading && !error" class="grid">
+    <div *ngIf="activeTab === 'documents'" class="tab-panel">
+      <h2>Upload industry report or HR file</h2>
+      <p class="hint">Accepted formats: CSV, PDF, DOC, DOCX (max 10 MB).</p>
+
+      <div class="upload-row">
+        <input
+          type="file"
+          accept=".csv,.pdf,.doc,.docx,application/pdf,text/csv"
+          (change)="onFileSelected($event)"
+        />
+        <button type="button" class="primary" [disabled]="uploadLoading" (click)="uploadDocument()">
+          {{ uploadLoading ? 'Uploading...' : 'Upload File' }}
+        </button>
+      </div>
+
+      <p *ngIf="selectedFile" class="selected-file">Selected: {{ selectedFile.name }}</p>
+      <p *ngIf="uploadError" class="message error">{{ uploadError }}</p>
+      <p *ngIf="uploadSuccess" class="message success">{{ uploadSuccess }}</p>
+
+      <div *ngIf="documents.length" class="recent-list">
+        <h3>Recent uploads</h3>
+        <ul>
+          <li *ngFor="let document of documents">
+            <div class="list-head">
+              <strong>{{ document.originalFilename }}</strong>
+              <span>{{ document.fileType | uppercase }} · {{ formatFileSize(document.fileSize) }}</span>
+            </div>
+            <small>Uploaded {{ document.createdAt }}</small>
+            <p *ngIf="document.rowCount !== null" class="meta">Rows detected: {{ document.rowCount }}</p>
+            <pre *ngIf="document.extractedText" class="preview">{{ document.extractedText }}</pre>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div *ngIf="activeTab === 'manual'" class="tab-panel">
+      <h2>Enter one at-risk employee</h2>
+      <p class="hint">HR can submit a single employee record including why they may need to leave.</p>
+
+      <form class="manual-form" (ngSubmit)="submitManualEmployee()">
+        <label>
+          Full name *
+          <input type="text" name="name" [(ngModel)]="manualForm.name" required />
+        </label>
+
+        <label>
+          Current role
+          <input type="text" name="currentRole" [(ngModel)]="manualForm.currentRole" />
+        </label>
+
+        <label>
+          Department
+          <input type="text" name="department" [(ngModel)]="manualForm.department" />
+        </label>
+
+        <label>
+          Email
+          <input type="email" name="email" [(ngModel)]="manualForm.email" />
+        </label>
+
+        <label>
+          Skills (comma-separated)
+          <input type="text" name="skills" [(ngModel)]="manualForm.skills" placeholder="Python, People Analytics" />
+        </label>
+
+        <label class="full-width">
+          Why does this employee need to leave? *
+          <textarea
+            name="departureReason"
+            rows="4"
+            [(ngModel)]="manualForm.departureReason"
+            required
+            placeholder="e.g. Role elimination due to restructuring, performance concerns, contract end..."
+          ></textarea>
+        </label>
+
+        <div class="form-actions">
+          <button type="submit" class="primary" [disabled]="manualLoading">
+            {{ manualLoading ? 'Saving...' : 'Submit Employee' }}
+          </button>
+        </div>
+      </form>
+
+      <p *ngIf="manualError" class="message error">{{ manualError }}</p>
+      <p *ngIf="manualSuccess" class="message success">{{ manualSuccess }}</p>
+
+      <div *ngIf="submissions.length" class="recent-list">
+        <h3>Recent submissions</h3>
+        <ul>
+          <li *ngFor="let submission of submissions">
+            <div class="list-head">
+              <strong>{{ submission.name }}</strong>
+              <span>{{ submission.currentRole || 'Role not specified' }}</span>
+            </div>
+            <small>{{ submission.department || 'Department not specified' }} · {{ submission.createdAt }}</small>
+            <p class="meta"><strong>Reason:</strong> {{ submission.departureReason }}</p>
+            <p *ngIf="submission.skills" class="meta"><strong>Skills:</strong> {{ submission.skills }}</p>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="grid">
     <article class="card">
       <h2>Employees</h2>
-      <ul>
+      <p *ngIf="dashboardLoading" class="hint">Loading employees...</p>
+      <p *ngIf="dashboardError" class="message error">{{ dashboardError }}</p>
+      <ul *ngIf="!dashboardLoading && !dashboardError">
         <li *ngFor="let employee of employees">
           <strong>{{ employee.name }}</strong> ({{ employee.currentRole }})
           <span>{{ employee.department }}</span>
           <small>Skills: {{ formatSkills(employee.skills) }}</small>
         </li>
+        <li *ngIf="employees.length === 0">No employees loaded yet.</li>
       </ul>
     </article>
 
     <article class="card">
       <h2>Open Vacancies</h2>
-      <ul>
+      <p *ngIf="dashboardLoading" class="hint">Loading vacancies...</p>
+      <ul *ngIf="!dashboardLoading && !dashboardError">
         <li *ngFor="let vacancy of vacancies">
           <strong>{{ vacancy.title }}</strong>
           <span>{{ vacancy.department }} · {{ vacancy.company }}</span>
           <small>Skills: {{ formatVacancySkills(vacancy.skills) }}</small>
         </li>
+        <li *ngIf="vacancies.length === 0">No vacancies loaded yet.</li>
       </ul>
     </article>
   </section>

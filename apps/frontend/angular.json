@@ -29,7 +29,8 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "buildTarget": "workforce-resilience-frontend:build"
+            "buildTarget": "workforce-resilience-frontend:build",
+            "proxyConfig": "proxy.conf.js"
           }
         }
       }

@@ -2,13 +2,17 @@ import os
 import sqlite3
 from collections import defaultdict
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 
 from db import get_db_path
+from db.migrate import ensure_intake_tables
+import intake
 
 app = Flask(__name__)
 CORS(app)
+
+ensure_intake_tables()
 
 
 def query(sql: str, params: tuple = ()) -> list[sqlite3.Row]:
@@ -24,6 +28,43 @@ def query(sql: str, params: tuple = ()) -> list[sqlite3.Row]:
 @app.get("/health")
 def health_check():
     return jsonify({"status": "ok"})
+
+
+@app.post("/api/intake/documents")
+def upload_intake_document():
+    if "file" not in request.files:
+        return jsonify({"error": "No file provided. Use form field name 'file'."}), 400
+
+    uploaded_file = request.files["file"]
+    if not uploaded_file.filename:
+        return jsonify({"error": "No file selected."}), 400
+
+    try:
+        file_bytes = uploaded_file.read()
+        record = intake.save_document_upload(uploaded_file.filename, file_bytes)
+        return jsonify(record), 201
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
+
+
+@app.get("/api/intake/documents")
+def list_intake_documents():
+    return jsonify(intake.list_document_uploads())
+
+
+@app.post("/api/intake/employees")
+def submit_at_risk_employee():
+    payload = request.get_json(silent=True) or {}
+    try:
+        record = intake.save_manual_submission(payload)
+        return jsonify(record), 201
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
+
+
+@app.get("/api/intake/employees")
+def list_at_risk_employees():
+    return jsonify(intake.list_manual_submissions())
 
 
 @app.get("/api/employees")

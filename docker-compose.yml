@@ -35,6 +35,8 @@ services:
       dockerfile: apps/frontend/Dockerfile
     container_name: wrp-frontend
     working_dir: /workspace/apps/frontend
+    environment:
+      API_PROXY_TARGET: http://backend:5000
     volumes:
       - ./:/workspace
       - frontend-node-modules:/workspace/apps/frontend/node_modules
@@ -42,7 +44,7 @@ services:
       - "4200:4200"
     command: >
       sh -c "npm install &&
-             npm run start -- --host 0.0.0.0 --port 4200"
+             npm run start -- --host 0.0.0.0 --port 4200 --disable-host-check"
     depends_on:
       - backend
 
