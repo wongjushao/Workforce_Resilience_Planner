@@ -1,160 +1,683 @@
-<main class="page">
-  <header>
-    <h1>Workforce Resilience Planner</h1>
-    <p>HR intake for industry reports and at-risk employee details</p>
+<div class="app">
+
+  <!-- ╔══════════════════════════════════════════════════════════════╗ -->
+  <!-- ║  TOP NAV                                                      ║ -->
+  <!-- ╚══════════════════════════════════════════════════════════════╝ -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="logo">
+        <span class="logo-icon">◈</span>
+        <span class="logo-text">Talentbank <em>WRP</em></span>
+      </div>
+      <div class="topbar-sep"></div>
+      <nav class="top-nav">
+        <button class="nav-btn" [class.active]="activeNav==='dashboard'" (click)="activeNav='dashboard'">Dashboard</button>
+        <button class="nav-btn" [class.active]="activeNav==='intake'"    (click)="activeNav='intake'">HR Intake</button>
+        <button class="nav-btn" [class.active]="activeNav==='employees'" (click)="activeNav='employees'">Employees</button>
+        <button class="nav-btn" [class.active]="activeNav==='vacancies'" (click)="activeNav='vacancies'">Vacancies</button>
+        <button class="nav-btn" [class.active]="activeNav==='portfolio'" (click)="activeNav='portfolio'">Portfolio</button>
+      </nav>
+    </div>
+    <div class="topbar-right">
+      <span class="stat-pill"><span class="dot red"></span>{{ employees.length }} Employees</span>
+      <span class="stat-pill"><span class="dot green"></span>{{ vacancies.length }} Vacancies</span>
+      <span class="user-chip">HR Admin</span>
+    </div>
   </header>
 
-  <section class="intake-panel card">
-    <p *ngIf="intakeLoading" class="hint">Loading intake history...</p>
-    <p *ngIf="intakeError" class="message error">{{ intakeError }}</p>
-    <nav class="tabs" aria-label="Intake options">
-      <button
-        type="button"
-        class="tab"
-        [class.active]="activeTab === 'documents'"
-        (click)="setTab('documents')"
-      >
-        Upload Documents
-      </button>
-      <button
-        type="button"
-        class="tab"
-        [class.active]="activeTab === 'manual'"
-        (click)="setTab('manual')"
-      >
-        Enter Employee Details
-      </button>
-    </nav>
+  <main class="page-body">
 
-    <div *ngIf="activeTab === 'documents'" class="tab-panel">
-      <h2>Upload industry report or HR file</h2>
-      <p class="hint">Accepted formats: CSV, PDF, DOC, DOCX (max 10 MB).</p>
+  <!-- ╔══════════════════════════════════════════════════════════════╗ -->
+  <!-- ║  DASHBOARD                                                    ║ -->
+  <!-- ╚══════════════════════════════════════════════════════════════╝ -->
+  <div *ngIf="activeNav==='dashboard'" class="section">
+    <div class="section-head">
+      <h1>Workforce Resilience Dashboard</h1>
+      <p class="sub">Overview of at-risk employees and open vacancies</p>
+    </div>
+
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-icon" style="color:#ef4444">⚠</div>
+        <div><div class="kpi-val">{{ employees.length }}</div><div class="kpi-lbl">Total Employees</div></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon" style="color:#f97316">🔥</div>
+        <div><div class="kpi-val">{{ highRiskCount }}</div><div class="kpi-lbl">High Risk</div></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon" style="color:#3b82f6">💼</div>
+        <div><div class="kpi-val">{{ vacancies.length }}</div><div class="kpi-lbl">Open Vacancies</div></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon" style="color:#22c55e">✓</div>
+        <div><div class="kpi-val">{{ documents.length }}</div><div class="kpi-lbl">Docs Processed</div></div>
+      </div>
+    </div>
+
+    <div class="dash-grid">
+      <div class="card">
+        <h3>At-Risk Employees</h3>
+        <ul class="dash-list">
+          <li *ngFor="let emp of employees.slice(0,5)" class="dash-li">
+            <div class="dash-avatar" [style.background]="avatarBg(emp.id)">{{ initials(emp.name) }}</div>
+            <div class="dash-info">
+              <strong>{{ emp.name }}</strong>
+              <span>{{ emp.currentRole }} · {{ emp.department }}</span>
+            </div>
+            <div class="risk-badge" [style.background]="riskBg(emp.riskScore)" [style.color]="riskColor(emp.riskScore)">
+              {{ emp.riskScore }}%
+            </div>
+            <button class="icon-btn" title="View Portfolio" (click)="openPortfolio(emp)">📋</button>
+          </li>
+          <li *ngIf="!employees.length" class="empty-li">No employees. <a (click)="activeNav='employees'">Add some.</a></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>Open Vacancies</h3>
+        <ul class="dash-list">
+          <li *ngFor="let v of vacancies.slice(0,5)" class="dash-li">
+            <div class="dash-avatar" style="background:#1e3a5f">💼</div>
+            <div class="dash-info">
+              <strong>{{ v.title }}</strong>
+              <span>{{ v.department }} · {{ v.company }}</span>
+            </div>
+          </li>
+          <li *ngIf="!vacancies.length" class="empty-li">No vacancies. <a (click)="activeNav='vacancies'">Add some.</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ╔══════════════════════════════════════════════════════════════╗ -->
+  <!-- ║  HR INTAKE                                                    ║ -->
+  <!-- ╚══════════════════════════════════════════════════════════════╝ -->
+  <div *ngIf="activeNav==='intake'" class="section">
+    <div class="section-head">
+      <h1>HR Intake</h1>
+      <p class="sub">Upload industry reports or manually register at-risk employees</p>
+    </div>
+
+    <div class="intake-tabs">
+      <button class="itab" [class.active]="intakeTab==='documents'" (click)="intakeTab='documents'">📄 Upload Documents</button>
+      <button class="itab" [class.active]="intakeTab==='manual'"    (click)="intakeTab='manual'">✏️ Manual Entry</button>
+    </div>
+
+    <!-- Documents tab -->
+    <div *ngIf="intakeTab==='documents'" class="card intake-card">
+      <h2>Upload Industry Report or HR File</h2>
+      <p class="hint">Accepted: CSV, PDF, DOC, DOCX (max 10 MB)</p>
 
       <div class="upload-row">
-        <input
-          type="file"
-          accept=".csv,.pdf,.doc,.docx,application/pdf,text/csv"
-          (change)="onFileSelected($event)"
-        />
-        <button type="button" class="primary" [disabled]="uploadLoading" (click)="uploadDocument()">
-          {{ uploadLoading ? 'Uploading...' : 'Upload File' }}
+        <input type="file" accept=".csv,.pdf,.doc,.docx" (change)="onFileSelected($event)" />
+        <button class="btn-primary" [disabled]="uploadLoading" (click)="uploadDocument()">
+          {{ uploadLoading ? 'Uploading…' : 'Upload File' }}
         </button>
       </div>
-
-      <p *ngIf="selectedFile" class="selected-file">Selected: {{ selectedFile.name }}</p>
-      <p *ngIf="uploadError" class="message error">{{ uploadError }}</p>
-      <p *ngIf="uploadSuccess" class="message success">{{ uploadSuccess }}</p>
+      <p *ngIf="selectedFile" class="hint">Selected: {{ selectedFile.name }}</p>
+      <p *ngIf="uploadError"   class="msg error">{{ uploadError }}</p>
+      <p *ngIf="uploadSuccess" class="msg success">{{ uploadSuccess }}</p>
 
       <div *ngIf="documents.length" class="recent-list">
-        <h3>Recent uploads</h3>
-        <ul>
-          <li *ngFor="let document of documents">
-            <div class="list-head">
-              <strong>{{ document.originalFilename }}</strong>
-              <span>{{ document.fileType | uppercase }} · {{ formatFileSize(document.fileSize) }}</span>
+        <h4>Recent Uploads</h4>
+        <ul class="doc-list">
+          <li *ngFor="let d of documents">
+            <div class="doc-head">
+              <strong>{{ d.originalFilename }}</strong>
+              <span>{{ d.fileType | uppercase }} · {{ formatFileSize(d.fileSize) }}</span>
             </div>
-            <small>Uploaded {{ document.createdAt }}</small>
-            <p *ngIf="document.rowCount !== null" class="meta">Rows detected: {{ document.rowCount }}</p>
-            <pre *ngIf="document.extractedText" class="preview">{{ document.extractedText }}</pre>
+            <small>{{ d.createdAt }}</small>
+            <p *ngIf="d.rowCount !== null">Rows detected: {{ d.rowCount }}</p>
+            <pre *ngIf="d.extractedText" class="preview">{{ d.extractedText }}</pre>
           </li>
         </ul>
       </div>
+      <p *ngIf="intakeLoading" class="hint">Loading…</p>
+      <p *ngIf="intakeError"   class="msg error">{{ intakeError }}</p>
     </div>
 
-    <div *ngIf="activeTab === 'manual'" class="tab-panel">
-      <h2>Enter one at-risk employee</h2>
-      <p class="hint">HR can submit a single employee record including why they may need to leave.</p>
+    <!-- Manual tab -->
+    <div *ngIf="intakeTab==='manual'" class="card intake-card">
+      <h2>Register At-Risk Employee</h2>
+      <p class="hint">Submit a single employee record with departure reason for triage.</p>
 
-      <form class="manual-form" (ngSubmit)="submitManualEmployee()">
-        <label>
-          Full name *
-          <input type="text" name="name" [(ngModel)]="manualForm.name" required />
+      <div class="form-grid">
+        <label class="field">Full Name *
+          <input type="text" [(ngModel)]="manualForm.name" placeholder="Ahmad Fadzillah" />
         </label>
-
-        <label>
-          Current role
-          <input type="text" name="currentRole" [(ngModel)]="manualForm.currentRole" />
+        <label class="field">Current Role
+          <input type="text" [(ngModel)]="manualForm.currentRole" placeholder="Frontend Developer" />
         </label>
-
-        <label>
-          Department
-          <input type="text" name="department" [(ngModel)]="manualForm.department" />
+        <label class="field">Department
+          <input type="text" [(ngModel)]="manualForm.department" placeholder="Engineering" />
         </label>
-
-        <label>
-          Email
-          <input type="email" name="email" [(ngModel)]="manualForm.email" />
+        <label class="field">Email
+          <input type="email" [(ngModel)]="manualForm.email" />
         </label>
-
-        <label>
-          Skills (comma-separated)
-          <input type="text" name="skills" [(ngModel)]="manualForm.skills" placeholder="Python, People Analytics" />
+        <label class="field full">Skills (comma-separated)
+          <input type="text" [(ngModel)]="manualForm.skills" placeholder="Angular, TypeScript, Git" />
         </label>
-
-        <label class="full-width">
-          Why does this employee need to leave? *
-          <textarea
-            name="departureReason"
-            rows="4"
-            [(ngModel)]="manualForm.departureReason"
-            required
-            placeholder="e.g. Role elimination due to restructuring, performance concerns, contract end..."
-          ></textarea>
+        <label class="field full">Departure Reason *
+          <textarea rows="2" [(ngModel)]="manualForm.departureReason" placeholder="Reason for potential departure…"></textarea>
         </label>
-
-        <div class="form-actions">
-          <button type="submit" class="primary" [disabled]="manualLoading">
-            {{ manualLoading ? 'Saving...' : 'Submit Employee' }}
+        <div class="field full">
+          <button class="btn-primary" [disabled]="manualLoading" (click)="submitManualEmployee()">
+            {{ manualLoading ? 'Saving…' : 'Save Employee' }}
           </button>
+          <p *ngIf="manualError"   class="msg error">{{ manualError }}</p>
+          <p *ngIf="manualSuccess" class="msg success">{{ manualSuccess }}</p>
         </div>
-      </form>
-
-      <p *ngIf="manualError" class="message error">{{ manualError }}</p>
-      <p *ngIf="manualSuccess" class="message success">{{ manualSuccess }}</p>
+      </div>
 
       <div *ngIf="submissions.length" class="recent-list">
-        <h3>Recent submissions</h3>
-        <ul>
-          <li *ngFor="let submission of submissions">
-            <div class="list-head">
-              <strong>{{ submission.name }}</strong>
-              <span>{{ submission.currentRole || 'Role not specified' }}</span>
+        <h4>Recent Submissions</h4>
+        <ul class="doc-list">
+          <li *ngFor="let s of submissions">
+            <div class="doc-head">
+              <strong>{{ s.name }}</strong>
+              <span>{{ s.currentRole ?? '—' }} · {{ s.department ?? '—' }}</span>
             </div>
-            <small>{{ submission.department || 'Department not specified' }} · {{ submission.createdAt }}</small>
-            <p class="meta"><strong>Reason:</strong> {{ submission.departureReason }}</p>
-            <p *ngIf="submission.skills" class="meta"><strong>Skills:</strong> {{ submission.skills }}</p>
+            <small>{{ s.createdAt }} · {{ s.source }}</small>
+            <p>{{ s.departureReason }}</p>
           </li>
         </ul>
       </div>
     </div>
-  </section>
+  </div>
 
-  <section class="grid">
-    <article class="card">
-      <h2>Employees</h2>
-      <p *ngIf="dashboardLoading" class="hint">Loading employees...</p>
-      <p *ngIf="dashboardError" class="message error">{{ dashboardError }}</p>
-      <ul *ngIf="!dashboardLoading && !dashboardError">
-        <li *ngFor="let employee of employees">
-          <strong>{{ employee.name }}</strong> ({{ employee.currentRole }})
-          <span>{{ employee.department }}</span>
-          <small>Skills: {{ formatSkills(employee.skills) }}</small>
-        </li>
-        <li *ngIf="employees.length === 0">No employees loaded yet.</li>
-      </ul>
-    </article>
+  <!-- ╔══════════════════════════════════════════════════════════════╗ -->
+  <!-- ║  EMPLOYEES                                                    ║ -->
+  <!-- ╚══════════════════════════════════════════════════════════════╝ -->
+  <div *ngIf="activeNav==='employees'" class="section">
+    <div class="section-head">
+      <div>
+        <h1>Employees</h1>
+        <p class="sub">Manage the workforce register and skill profiles</p>
+      </div>
+      <button class="btn-primary" (click)="openAddEmployee()">+ Add Employee</button>
+    </div>
 
-    <article class="card">
-      <h2>Open Vacancies</h2>
-      <p *ngIf="dashboardLoading" class="hint">Loading vacancies...</p>
-      <ul *ngIf="!dashboardLoading && !dashboardError">
-        <li *ngFor="let vacancy of vacancies">
-          <strong>{{ vacancy.title }}</strong>
-          <span>{{ vacancy.department }} · {{ vacancy.company }}</span>
-          <small>Skills: {{ formatVacancySkills(vacancy.skills) }}</small>
-        </li>
-        <li *ngIf="vacancies.length === 0">No vacancies loaded yet.</li>
-      </ul>
-    </article>
-  </section>
-</main>
+    <div class="toolbar">
+      <input class="search-input" type="text" [(ngModel)]="empFilterText" placeholder="Search by name, role or department…" />
+      <span class="count-badge">{{ filteredEmployees.length }} records</span>
+    </div>
+
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Employee</th><th>Role</th><th>Dept</th><th>Exp</th>
+            <th>Risk</th><th>Reason</th><th>Perf</th><th>Skills</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let emp of filteredEmployees">
+            <td>
+              <div class="cell-emp">
+                <span class="mini-avatar" [style.background]="avatarBg(emp.id)">{{ initials(emp.name) }}</span>
+                <div>
+                  <div class="cell-name">{{ emp.name }}</div>
+                  <div class="cell-sub">{{ emp.email }}</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="role-tag">{{ emp.currentRole }}</span></td>
+            <td>{{ emp.department }}</td>
+            <td>{{ emp.yearsOfExperience }}y</td>
+            <td>
+              <span class="risk-badge" [style.background]="riskBg(emp.riskScore)" [style.color]="riskColor(emp.riskScore)">
+                {{ emp.riskScore }}%
+              </span>
+            </td>
+            <td><span class="reason-tag">{{ emp.riskReason }}</span></td>
+            <td>
+              <div class="star-row">
+                <span *ngFor="let s of [1,2,3,4,5]" [style.color]="s<=emp.performanceRating?'#f59e0b':'#374151'">★</span>
+              </div>
+            </td>
+            <td>
+              <div class="skill-chips">
+                <span *ngFor="let sk of emp.skills.slice(0,3)" class="skill-chip">{{ sk.name }}</span>
+                <span *ngIf="emp.skills.length>3" class="skill-chip more">+{{ emp.skills.length-3 }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="action-row">
+                <button class="icon-btn" title="View Portfolio" (click)="openPortfolio(emp)">📋</button>
+                <button class="icon-btn" title="Edit"           (click)="openEditEmployee(emp)">✏️</button>
+                <button class="icon-btn danger" title="Delete"  (click)="deleteEmployee(emp)">🗑</button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="!filteredEmployees.length">
+            <td colspan="9" class="empty-cell">No employees found.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ╔══════════════════════════════════════════════════════════════╗ -->
+  <!-- ║  VACANCIES                                                    ║ -->
+  <!-- ╚══════════════════════════════════════════════════════════════╝ -->
+  <div *ngIf="activeNav==='vacancies'" class="section">
+    <div class="section-head">
+      <div>
+        <h1>Vacancies</h1>
+        <p class="sub">Manage open positions and required skill profiles</p>
+      </div>
+      <button class="btn-primary" (click)="openAddVacancy()">+ Add Vacancy</button>
+    </div>
+
+    <div class="toolbar">
+      <input class="search-input" type="text" [(ngModel)]="vacFilterText" placeholder="Search by title or department…" />
+      <span class="count-badge">{{ filteredVacancies.length }} records</span>
+    </div>
+
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr><th>Title</th><th>Department</th><th>Company</th><th>Required Skills</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let v of filteredVacancies">
+            <td><strong class="cell-name">{{ v.title }}</strong></td>
+            <td>{{ v.department }}</td>
+            <td>{{ v.company }}</td>
+            <td>
+              <div class="skill-chips">
+                <span *ngFor="let entry of scoreEntries(v.requiredSkillScores).slice(0,4)" class="skill-chip">
+                  {{ entry[0] }}: {{ entry[1] }}
+                </span>
+                <span *ngIf="scoreEntries(v.requiredSkillScores).length>4" class="skill-chip more">
+                  +{{ scoreEntries(v.requiredSkillScores).length-4 }}
+                </span>
+              </div>
+            </td>
+            <td>
+              <div class="action-row">
+                <button class="icon-btn" title="Edit"   (click)="openEditVacancy(v)">✏️</button>
+                <button class="icon-btn danger" title="Delete" (click)="deleteVacancy(v)">🗑</button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="!filteredVacancies.length">
+            <td colspan="5" class="empty-cell">No vacancies found.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ╔══════════════════════════════════════════════════════════════╗ -->
+  <!-- ║  PORTFOLIO                                                    ║ -->
+  <!-- ╚══════════════════════════════════════════════════════════════╝ -->
+  <div *ngIf="activeNav==='portfolio'" class="section portfolio-section">
+
+    <!-- Empty state -->
+    <div *ngIf="!portfolioEmployee" class="empty-portfolio">
+      <div class="ep-icon">📋</div>
+      <h3>No Employee Selected</h3>
+      <p>Go to the <a (click)="activeNav='employees'">Employees</a> list and click the 📋 icon on any employee to generate their transition portfolio.</p>
+    </div>
+
+    <div *ngIf="portfolioEmployee" class="portfolio-wrap">
+
+      <!-- Portfolio header -->
+      <div class="port-header">
+        <div class="port-emp">
+          <div class="p-avatar" [style.background]="avatarBg(portfolioEmployee.id)">
+            {{ initials(portfolioEmployee.name) }}
+          </div>
+          <div>
+            <h2>{{ portfolioEmployee.name }}</h2>
+            <p>{{ portfolioEmployee.currentRole }} · {{ portfolioEmployee.department }}</p>
+          </div>
+        </div>
+        <div class="port-badges">
+          <span class="risk-badge lg" [style.background]="riskBg(portfolioEmployee.riskScore)" [style.color]="riskColor(portfolioEmployee.riskScore)">
+            Risk {{ portfolioEmployee.riskScore }}%
+          </span>
+          <span class="reason-tag">{{ portfolioEmployee.riskReason }}</span>
+        </div>
+        <button class="btn-ghost" (click)="activeNav='employees'">← Back to Employees</button>
+      </div>
+
+      <!-- Section tabs -->
+      <div class="port-tabs">
+        <button class="ptab" [class.active]="portfolioTab===0" (click)="setPortfolioTab(0)"><span class="ptab-n">1</span> Personal Info</button>
+        <button class="ptab" [class.active]="portfolioTab===1" (click)="setPortfolioTab(1)"><span class="ptab-n">2</span> Skill Gap Analysis</button>
+        <button class="ptab" [class.active]="portfolioTab===2" (click)="setPortfolioTab(2)"><span class="ptab-n">3</span> HR Summary</button>
+      </div>
+
+      <!-- ── SECTION 1: Personal Info ──────────────────────────────────── -->
+      <div *ngIf="portfolioTab===0" class="port-body">
+        <div class="info-grid">
+          <div class="info-block"><label>Full Name</label><span>{{ portfolioEmployee.name }}</span></div>
+          <div class="info-block"><label>Age</label><span>{{ portfolioEmployee.age }}</span></div>
+          <div class="info-block"><label>Gender</label><span>{{ portfolioEmployee.gender }}</span></div>
+          <div class="info-block"><label>Email</label><span>{{ portfolioEmployee.email }}</span></div>
+          <div class="info-block"><label>Phone</label><span>{{ portfolioEmployee.phone }}</span></div>
+          <div class="info-block"><label>Department</label><span>{{ portfolioEmployee.department }}</span></div>
+          <div class="info-block"><label>Current Role</label><span>{{ portfolioEmployee.currentRole }}</span></div>
+          <div class="info-block"><label>Experience</label><span>{{ portfolioEmployee.yearsOfExperience }} years</span></div>
+          <div class="info-block"><label>Performance</label>
+            <span>
+              <span *ngFor="let s of [1,2,3,4,5]" [style.color]="s<=portfolioEmployee.performanceRating?'#f59e0b':'#374151'">★</span>
+              {{ portfolioEmployee.performanceRating }}/5
+            </span>
+          </div>
+        </div>
+
+        <div class="skills-section">
+          <h4>Technical &amp; Soft Skills</h4>
+          <div class="skill-bars">
+            <div *ngFor="let sk of portfolioEmployee.skills" class="sbar-row">
+              <span class="sbar-name">{{ sk.name }}</span>
+              <div class="sbar-track">
+                <div class="sbar-fill" [style.width]="(sk.proficiency/5*100)+'%'" [style.background]="barColor(sk.proficiency)"></div>
+              </div>
+              <span class="sbar-val">{{ sk.proficiency }}/5</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SECTION 2: Skill Gap Analysis ────────────────────────────── -->
+      <div *ngIf="portfolioTab===1" class="port-body skill-gap-body">
+
+        <!-- Role picker sidebar -->
+        <div class="role-picker">
+          <h4>Available Roles</h4>
+
+          <div *ngIf="sameFieldMatches.length" class="role-group">
+            <div class="role-group-label">
+              <span class="match-badge same">Same Field</span>
+            </div>
+            <button *ngFor="let v of sameFieldMatches" class="role-btn"
+              [class.selected]="selectedVacancy?.id===v.id"
+              (click)="selectVacancy(v)">
+              <div class="rb-title">{{ v.title }}</div>
+              <div class="rb-meta">{{ v.department }}</div>
+              <div class="rb-score" [style.color]="matchColor(v.matchScore)">{{ v.matchScore }}% match</div>
+            </button>
+          </div>
+
+          <div *ngIf="crossRoleMatches.length" class="role-group">
+            <div class="role-group-label">
+              <span class="match-badge cross">Cross Role</span>
+            </div>
+            <button *ngFor="let v of crossRoleMatches" class="role-btn"
+              [class.selected]="selectedVacancy?.id===v.id"
+              (click)="selectVacancy(v)">
+              <div class="rb-title">{{ v.title }}</div>
+              <div class="rb-meta">{{ v.department }}</div>
+              <div class="rb-score" [style.color]="matchColor(v.matchScore)">{{ v.matchScore }}% match</div>
+            </button>
+          </div>
+
+          <div *ngIf="noMatches" class="no-match-msg">
+            <p>No suitable internal roles found for this employee's skill profile.</p>
+          </div>
+        </div>
+
+        <!-- Chart area -->
+        <div class="chart-area" *ngIf="selectedVacancy">
+          <div class="chart-header">
+            <div>
+              <h3>{{ portfolioEmployee.currentRole }} → {{ selectedVacancy.title }}</h3>
+              <span class="match-badge" [class.same]="isOverlapMode" [class.cross]="!isOverlapMode">
+                {{ isOverlapMode ? 'Same Field — Overlapping Radar' : 'Cross Role — Side by Side' }}
+              </span>
+            </div>
+            <span class="big-score" [style.color]="matchColor(selectedVacancy.matchScore)">
+              {{ selectedVacancy.matchScore }}% match
+            </span>
+          </div>
+
+          <!-- Overlapping chart (same field) -->
+          <div *ngIf="isOverlapMode" class="radar-center">
+            <canvas #radarOverlap width="320" height="320"></canvas>
+            <div class="radar-legend">
+              <span class="leg"><span class="leg-dot" style="background:#60a5fa"></span>Current: {{ portfolioEmployee.currentRole }}</span>
+              <span class="leg"><span class="leg-dot" style="background:#a78bfa"></span>Target: {{ selectedVacancy.title }}</span>
+            </div>
+          </div>
+
+          <!-- Side-by-side charts (cross role) -->
+          <div *ngIf="!isOverlapMode" class="radar-sbs">
+            <div class="sbs-panel">
+              <p class="sbs-label cur">Current: {{ portfolioEmployee.currentRole }}</p>
+              <canvas #radarLeft width="260" height="260"></canvas>
+            </div>
+            <div class="sbs-arrow">→</div>
+            <div class="sbs-panel">
+              <p class="sbs-label tgt">Target: {{ selectedVacancy.title }}</p>
+              <canvas #radarRight width="260" height="260"></canvas>
+            </div>
+          </div>
+
+          <!-- Gap table (same field only — axes align) -->
+          <div *ngIf="isOverlapMode" class="gap-table">
+            <div class="gap-head">
+              <span>Skill</span><span>Current</span><span>Required</span><span>Gap</span>
+            </div>
+            <div *ngFor="let row of gapRows()" class="gap-row" [class.neg]="row.gap < 0">
+              <span>{{ row.axis }}</span>
+              <span>{{ row.current }}</span>
+              <span>{{ row.required }}</span>
+              <span [style.color]="row.gap >= 0 ? '#22c55e' : '#ef4444'">
+                {{ row.gap >= 0 ? '+' : '' }}{{ row.gap.toFixed(1) }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Cross-role note -->
+          <div *ngIf="!isOverlapMode" class="cross-note">
+            <strong>Cross-role transition detected.</strong>
+            These roles use different skill frameworks. The charts show your current competency profile
+            alongside the target role's requirements. Focus upskilling on areas where the target role
+            scores significantly higher than your current level.
+          </div>
+        </div>
+
+        <div class="chart-area no-match-area" *ngIf="noMatches">
+          <div class="no-match-inner">
+            <span>🔍</span>
+            <p>No internal roles were found with sufficient skill overlap. Consider external placement support or a targeted reskilling programme before reassessment.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SECTION 3: HR Summary ─────────────────────────────────────── -->
+      <div *ngIf="portfolioTab===2" class="port-body">
+        <div class="sum-grid">
+          <div class="sum-card" style="border-left-color:#ef4444">
+            <div class="sum-icon">⚡</div>
+            <h5>Layoff Risk Analysis</h5>
+            <p><strong>Reason:</strong> {{ portfolioEmployee.riskReason }}</p>
+            <p><strong>Score:</strong> <span [style.color]="riskColor(portfolioEmployee.riskScore)">{{ portfolioEmployee.riskScore }}% — {{ riskLabel(portfolioEmployee.riskScore) }}</span></p>
+            <p>{{ riskNarrative(portfolioEmployee) }}</p>
+          </div>
+
+          <div class="sum-card" style="border-left-color:#f59e0b">
+            <div class="sum-icon">📊</div>
+            <h5>Performance Review</h5>
+            <div class="perf-row">
+              <span *ngFor="let s of [1,2,3,4,5]" class="star" [style.color]="s<=portfolioEmployee.performanceRating?'#f59e0b':'#374151'">★</span>
+              <span class="perf-val">{{ portfolioEmployee.performanceRating }}/5</span>
+            </div>
+            <p class="italic">{{ portfolioEmployee.peerReview }}</p>
+          </div>
+
+          <div class="sum-card" style="border-left-color:#3b82f6">
+            <div class="sum-icon">💼</div>
+            <h5>Manager's Assessment</h5>
+            <p class="italic">{{ portfolioEmployee.managerComment }}</p>
+          </div>
+
+          <div class="sum-card" style="border-left-color:#22c55e">
+            <div class="sum-icon">🎯</div>
+            <h5>Transition Recommendation</h5>
+            <div *ngIf="!noMatches">
+              <p *ngIf="sameFieldMatches.length">
+                <strong>{{ sameFieldMatches.length }}</strong> same-field role{{ sameFieldMatches.length>1?'s':'' }} available.
+                Top pick: <strong>{{ sameFieldMatches[0].title }}</strong> ({{ sameFieldMatches[0].matchScore }}% fit).
+                Estimated reskilling: <strong>3–6 months.</strong>
+              </p>
+              <p *ngIf="crossRoleMatches.length">
+                <strong>{{ crossRoleMatches.length }}</strong> cross-role opportunit{{ crossRoleMatches.length>1?'ies':'y' }}.
+                Best option: <strong>{{ crossRoleMatches[0].title }}</strong> ({{ crossRoleMatches[0].matchScore }}% overlap).
+                Estimated reskilling: <strong>6–12 months.</strong>
+              </p>
+            </div>
+            <p *ngIf="noMatches" style="color:#f87171">No suitable internal roles identified. Recommend external placement support or reassessment in 3 months.</p>
+          </div>
+        </div>
+
+        <div class="hr-actions">
+          <button class="action-btn accept">✓ Accept for Reskilling</button>
+          <button class="action-btn defer">⏸ Defer Decision</button>
+          <button class="action-btn reject">✗ Close Case</button>
+        </div>
+      </div>
+
+    </div><!-- /portfolio-wrap -->
+  </div><!-- /portfolio section -->
+
+  </main><!-- /page-body -->
+
+  <!-- ╔══════════════════════════════════════════════════════════════╗ -->
+  <!-- ║  EMPLOYEE MODAL                                               ║ -->
+  <!-- ╚══════════════════════════════════════════════════════════════╝ -->
+  <div *ngIf="showEmpModal" class="modal-backdrop" (click)="showEmpModal=false">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ editingEmployee ? 'Edit Employee' : 'Add Employee' }}</h3>
+        <button class="modal-close" (click)="showEmpModal=false">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <label class="field">Full Name *
+            <input type="text" [(ngModel)]="empForm.name" />
+          </label>
+          <label class="field">Current Role *
+            <input type="text" [(ngModel)]="empForm.currentRole" placeholder="Frontend Developer" />
+          </label>
+          <label class="field">Department
+            <input type="text" [(ngModel)]="empForm.department" />
+          </label>
+          <label class="field">Email
+            <input type="email" [(ngModel)]="empForm.email" />
+          </label>
+          <label class="field">Phone
+            <input type="text" [(ngModel)]="empForm.phone" />
+          </label>
+          <label class="field">Age
+            <input type="number" [(ngModel)]="empForm.age" min="18" max="70" />
+          </label>
+          <label class="field">Gender
+            <select [(ngModel)]="empForm.gender">
+              <option>Male</option><option>Female</option><option>Non-binary</option><option>Unspecified</option>
+            </select>
+          </label>
+          <label class="field">Years of Experience
+            <input type="number" [(ngModel)]="empForm.yearsOfExperience" min="0" />
+          </label>
+          <label class="field">Risk Score (0–100)
+            <input type="number" [(ngModel)]="empForm.riskScore" min="0" max="100" />
+          </label>
+          <label class="field">Risk Reason
+            <select [(ngModel)]="empForm.riskReason">
+              <option>AI Automation Risk</option>
+              <option>Role Restructuring</option>
+              <option>Performance</option>
+              <option>Contract Ending</option>
+              <option>Budget Cuts</option>
+              <option>Redundancy</option>
+            </select>
+          </label>
+          <label class="field">Performance Rating (1–5)
+            <input type="number" [(ngModel)]="empForm.performanceRating" min="1" max="5" step="0.1" />
+          </label>
+          <label class="field full">Peer Review
+            <textarea rows="2" [(ngModel)]="empForm.peerReview"></textarea>
+          </label>
+          <label class="field full">Manager Comment
+            <textarea rows="2" [(ngModel)]="empForm.managerComment"></textarea>
+          </label>
+        </div>
+
+        <!-- Skills editor -->
+        <div class="skill-editor">
+          <div class="skill-editor-head">
+            <h4>Skills</h4>
+            <button class="btn-sm" (click)="addSkillRow()">+ Add Skill</button>
+          </div>
+          <div *ngFor="let sk of parsedSkillRows; let i=index" class="skill-edit-row">
+            <input class="sk-name" type="text" [value]="sk.name" (input)="updateSkillName(i, $any($event.target).value)" placeholder="Skill name" />
+            <input class="sk-prof" type="number" [value]="sk.proficiency" (input)="updateSkillProf(i, +$any($event.target).value)" min="0" max="5" step="0.1" />
+            <button class="icon-btn danger sm" (click)="removeSkillByIndex(i)">✕</button>
+          </div>
+          <p *ngIf="!parsedSkillRows.length" class="hint sm">No skills yet. Click "+ Add Skill".</p>
+        </div>
+
+        <p *ngIf="empFormError" class="msg error">{{ empFormError }}</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" (click)="showEmpModal=false">Cancel</button>
+        <button class="btn-primary" (click)="saveEmployee()">{{ editingEmployee ? 'Update' : 'Create' }}</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ╔══════════════════════════════════════════════════════════════╗ -->
+  <!-- ║  VACANCY MODAL                                                ║ -->
+  <!-- ╚══════════════════════════════════════════════════════════════╝ -->
+  <div *ngIf="showVacModal" class="modal-backdrop" (click)="showVacModal=false">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ editingVacancy ? 'Edit Vacancy' : 'Add Vacancy' }}</h3>
+        <button class="modal-close" (click)="showVacModal=false">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <label class="field full">Title *
+            <input type="text" [(ngModel)]="vacForm.title" placeholder="Cloud Engineer" />
+          </label>
+          <label class="field">Department
+            <input type="text" [(ngModel)]="vacForm.department" />
+          </label>
+          <label class="field">Company
+            <input type="text" [(ngModel)]="vacForm.company" />
+          </label>
+          <label class="field full">
+            Required Skill Scores
+            <span class="field-hint">(key:score pairs, comma separated, e.g. programming:4.5, cloud:4.8)</span>
+            <textarea rows="3" [(ngModel)]="vacForm.skillsRaw"></textarea>
+          </label>
+        </div>
+        <p *ngIf="vacFormError" class="msg error">{{ vacFormError }}</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" (click)="showVacModal=false">Cancel</button>
+        <button class="btn-primary" (click)="saveVacancy()">{{ editingVacancy ? 'Update' : 'Create' }}</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ╔══════════════════════════════════════════════════════════════╗ -->
+  <!-- ║  CONFIRM DIALOG                                               ║ -->
+  <!-- ╚══════════════════════════════════════════════════════════════╝ -->
+  <div *ngIf="showConfirm" class="modal-backdrop">
+    <div class="modal confirm-modal">
+      <p>{{ confirmMsg }}</p>
+      <div class="modal-footer">
+        <button class="btn-ghost" (click)="cancelConfirm()">Cancel</button>
+        <button class="btn-danger" (click)="doConfirm()">Delete</button>
+      </div>
+    </div>
+  </div>
+
+</div>
