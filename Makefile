@@ -24,7 +24,9 @@ up:
 down:
 	docker compose down
 
-restart: down up
+restart:
+	docker compose down -v
+	docker compose up --build
 
 build:
 	docker compose build

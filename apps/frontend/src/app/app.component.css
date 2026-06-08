@@ -504,3 +504,12 @@
   .hr-actions { flex-direction: column; }
   .top-nav .nav-btn { padding: 6px 8px; font-size: 0.75rem; }
 }
+
+.home-link {
+  color: #475569;
+  text-decoration: none;
+  border-right: 1px solid rgba(148,163,184,0.15);
+  padding-right: 14px;
+  margin-right: 4px;
+}
+.home-link:hover { color: #94a3b8; }

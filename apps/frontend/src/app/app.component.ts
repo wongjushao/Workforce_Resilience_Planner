@@ -5,6 +5,8 @@ import {
   Employee, Vacancy, MOCK_EMPLOYEES, MOCK_VACANCIES,
   SkillAxis, getAxes, getRoleProfile, isSameDomain, computeMatchScore, getDomain, SKILL_AXES,
 } from './mock-data';
+import { RouterModule } from '@angular/router';
+import { BodyClassService } from './services/body-class.service';
 
 // ─── API types (from existing backend) ───────────────────────────────────────
 type IntakeDocument = {
@@ -27,7 +29,7 @@ interface GapRow { axis: string; current: number; required: number; gap: number;
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
 })
@@ -82,9 +84,11 @@ export class AppComponent implements OnInit, AfterViewChecked {
   @ViewChild('radarRight')   radarRightRef?:   ElementRef<HTMLCanvasElement>;
   private pendingRadarDraw = false;
 
-  constructor(private cdr: ChangeDetectorRef) {}
+  constructor(private cdr: ChangeDetectorRef, private bodyClass: BodyClassService) {}
+
 
   ngOnInit() {
+    this.bodyClass.setDashboard();
     this.employees = JSON.parse(JSON.stringify(MOCK_EMPLOYEES));
     this.vacancies = JSON.parse(JSON.stringify(MOCK_VACANCIES));
     this.nextEmpId = Math.max(...this.employees.map(e => e.id)) + 1;
