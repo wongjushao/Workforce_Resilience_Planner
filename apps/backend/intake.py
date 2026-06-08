@@ -134,36 +134,74 @@ def save_document_upload(filename: str, file_bytes: bytes) -> dict:
 
 
 def save_manual_submission(payload: dict) -> dict:
-    name = (payload.get("name") or "").strip()
+    employee_id = payload.get("employeeId") or payload.get("employee_id")
     departure_reason = (payload.get("departureReason") or payload.get("departure_reason") or "").strip()
+    performance = payload.get("performance")
+    document_id = payload.get("documentId") or payload.get("document_id")
 
-    if not name:
-        raise ValueError("Employee name is required.")
+    if employee_id is None:
+        raise ValueError("Employee id is required.")
+    try:
+        employee_id = int(employee_id)
+    except (TypeError, ValueError) as error:
+        raise ValueError("Employee id must be an integer.") from error
     if not departure_reason:
         raise ValueError("Departure reason is required.")
+    if performance is not None:
+        try:
+            performance = int(performance)
+        except (TypeError, ValueError) as error:
+            raise ValueError("Performance must be an integer.") from error
+    if document_id is not None:
+        try:
+            document_id = int(document_id)
+        except (TypeError, ValueError) as error:
+            raise ValueError("Document id must be an integer.") from error
 
     connection = get_connection()
     try:
+        employee = connection.execute(
+            "SELECT id FROM employees WHERE id = ?",
+            (employee_id,),
+        ).fetchone()
+        if employee is None:
+            raise ValueError(f"Employee {employee_id} was not found.")
+
+        if document_id is not None:
+            document = connection.execute(
+                "SELECT id FROM intake_documents WHERE id = ?",
+                (document_id,),
+            ).fetchone()
+            if document is None:
+                raise ValueError(f"Document {document_id} was not found.")
+
         cursor = connection.execute(
             """
             INSERT INTO at_risk_submissions
-              (name, current_role, department, email, skills, departure_reason, source)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+              (employee_id, departure_reason, department, performance, document_id)
+            VALUES (?, ?, ?, ?, ?)
             """,
             (
-                name,
-                (payload.get("currentRole") or payload.get("current_role") or "").strip() or None,
-                (payload.get("department") or "").strip() or None,
-                (payload.get("email") or "").strip() or None,
-                (payload.get("skills") or "").strip() or None,
+                employee_id,
                 departure_reason,
-                "manual",
+                (payload.get("department") or "").strip() or None,
+                performance,
+                document_id,
             ),
         )
         connection.commit()
         submission_id = cursor.lastrowid
         row = connection.execute(
-            "SELECT * FROM at_risk_submissions WHERE id = ?",
+            """
+            SELECT
+              ars.*,
+              e.name AS employee_name,
+              o.title AS current_role
+            FROM at_risk_submissions ars
+            JOIN employees e ON e.id = ars.employee_id
+            JOIN occupations o ON o.id = e.current_role_id
+            WHERE ars.id = ?
+            """,
             (submission_id,),
         ).fetchone()
         return submission_row_to_dict(row)
@@ -191,9 +229,14 @@ def list_manual_submissions() -> list[dict]:
     try:
         rows = connection.execute(
             """
-            SELECT *
-            FROM at_risk_submissions
-            ORDER BY datetime(created_at) DESC
+            SELECT
+              ars.*,
+              e.name AS employee_name,
+              o.title AS current_role
+            FROM at_risk_submissions ars
+            JOIN employees e ON e.id = ars.employee_id
+            JOIN occupations o ON o.id = e.current_role_id
+            ORDER BY datetime(ars.created_at) DESC
             """
         ).fetchall()
         return [submission_row_to_dict(row) for row in rows]
@@ -217,12 +260,12 @@ def document_row_to_dict(row: sqlite3.Row) -> dict:
 def submission_row_to_dict(row: sqlite3.Row) -> dict:
     return {
         "id": row["id"],
-        "name": row["name"],
+        "employeeId": row["employee_id"],
+        "employeeName": row["employee_name"],
         "currentRole": row["current_role"],
         "department": row["department"],
-        "email": row["email"],
-        "skills": row["skills"],
+        "performance": row["performance"],
+        "documentId": row["document_id"],
         "departureReason": row["departure_reason"],
-        "source": row["source"],
         "createdAt": row["created_at"],
     }

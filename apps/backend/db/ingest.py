@@ -1,7 +1,7 @@
 """Ingest the O*NET XLSX files from the project `src/` folder into SQLite.
 
-This performs a clean rebuild of the reference tables: it applies `schema.sql`
-(dropping and recreating every table) and then loads all source data.
+This performs a clean rebuild of the reference tables: it resets the database,
+replays migrations, and then loads all source data.
 
 Usage (from apps/backend):
     DATABASE_URL=file:../../data/workforce.db python -m db.ingest
@@ -16,8 +16,7 @@ from pathlib import Path
 import pandas as pd
 
 from db import get_db_path
-
-SCHEMA_PATH = Path(__file__).parent / "schema.sql"
+from db.migrate import apply_migrations, reset_database
 
 # Project root is four levels up: apps/backend/db/ingest.py -> repo root.
 DEFAULT_SRC = Path(__file__).resolve().parents[3] / "src"
@@ -77,19 +76,41 @@ def load_occupations(conn: sqlite3.Connection, src: Path) -> dict[str, int]:
     return code_to_id
 
 
-def load_skills(conn: sqlite3.Connection, src: Path) -> dict[str, int]:
+def load_skill_topics(conn: sqlite3.Connection) -> dict[str, int]:
+    topic_names = sorted({category for _filename, _source, category in ELEMENT_FILES})
+    conn.executemany(
+        "INSERT OR IGNORE INTO skill_topic (name) VALUES (?)",
+        [(name,) for name in topic_names],
+    )
+    topic_to_id = {
+        name: topic_id
+        for topic_id, name in conn.execute("SELECT id, name FROM skill_topic")
+    }
+    print(f"  skill_topic: {len(topic_to_id)}")
+    return topic_to_id
+
+
+def load_skills(
+    conn: sqlite3.Connection, src: Path, topic_to_id: dict[str, int]
+) -> dict[str, int]:
     """Collect the distinct element names across all element files as skills."""
-    seen: dict[str, str] = {}
+    seen: dict[str, tuple[str, str | None]] = {}
     for filename, _source, category in ELEMENT_FILES:
         df = _read(src, filename)
         for name in df["Element Name"].dropna().unique():
             name = name.strip()
             if name and name not in seen:
-                seen[name] = category
+                seen[name] = (category, None)
 
     conn.executemany(
-        "INSERT OR IGNORE INTO skills (name, category) VALUES (?, ?)",
-        list(seen.items()),
+        """
+        INSERT OR IGNORE INTO skills (name, other_name, category, skill_topic_id)
+        VALUES (?, ?, ?, ?)
+        """,
+        [
+            (name, other_name, category, topic_to_id[category])
+            for name, (category, other_name) in seen.items()
+        ],
     )
     name_to_id = {
         name: sid for sid, name in conn.execute("SELECT id, name FROM skills")
@@ -213,14 +234,17 @@ def ingest(src: Path) -> None:
     print(f"Source folder: {src}")
     print(f"Database:      {db_path}")
 
+    reset_database()
+    apply_migrations()
+
     conn = sqlite3.connect(db_path)
     try:
-        conn.executescript(SCHEMA_PATH.read_text())
         conn.execute("PRAGMA foreign_keys = ON")
 
         print("Loading O*NET data...")
         code_to_id = load_occupations(conn, src)
-        name_to_id = load_skills(conn, src)
+        topic_to_id = load_skill_topics(conn)
+        name_to_id = load_skills(conn, src, topic_to_id)
         load_occupation_skills(conn, src, code_to_id, name_to_id)
         load_related_occupations(conn, src, code_to_id)
         load_alternate_titles(conn, src, code_to_id)

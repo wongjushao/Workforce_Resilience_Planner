@@ -6,13 +6,13 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 
 from db import get_db_path
-from db.migrate import ensure_intake_tables
+from db.migrate import ensure_migrations
 import intake
 
 app = Flask(__name__)
 CORS(app)
 
-ensure_intake_tables()
+ensure_migrations()
 
 
 def query(sql: str, params: tuple = ()) -> list[sqlite3.Row]:
@@ -71,9 +71,20 @@ def list_at_risk_employees():
 def list_employees():
     employees = query(
         """
-        SELECT id, name, current_role, department
-        FROM employees
-        ORDER BY name
+        SELECT
+          e.id,
+          e.name,
+          e.age,
+          e.gender,
+          e.email,
+          e.phone,
+          e.department,
+          e.experience,
+          e.current_role_id,
+          o.title AS current_role
+        FROM employees e
+        JOIN occupations o ON o.id = e.current_role_id
+        ORDER BY e.name
         """
     )
     skills = query(
@@ -100,8 +111,14 @@ def list_employees():
             {
                 "id": employee["id"],
                 "name": employee["name"],
-                "currentRole": employee["current_role"],
+                "age": employee["age"],
+                "gender": employee["gender"],
+                "email": employee["email"],
+                "phone": employee["phone"],
                 "department": employee["department"],
+                "experience": employee["experience"],
+                "currentRoleId": employee["current_role_id"],
+                "currentRole": employee["current_role"],
                 "skills": skills_by_employee[employee["id"]],
             }
             for employee in employees
