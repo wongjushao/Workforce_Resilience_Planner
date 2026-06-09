@@ -1,10 +1,56 @@
-* {
-  box-sizing: border-box;
-  font-family: Inter, Arial, sans-serif;
+/* ─── Universal resets ───────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
-body {
-  margin: 0;
-  background: #f5f7fb;
-  color: #17202a;
+/* ─── Marketing pages background (active on /home, /faq, etc.) ──────────── */
+/* Applied when the router renders a marketing page component via body class  */
+/* The marketing components set this class on init via BodyClassService       */
+body.marketing-bg {
+  color: #f8fbff;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(0, 242, 255, 0.18), transparent 28rem),
+    radial-gradient(circle at 85% 15%, rgba(112, 0, 255, 0.20), transparent 32rem),
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    #030712;
+  background-size: auto, auto, 40px 40px, 40px 40px, auto;
+  font-family: "Satoshi", ui-sans-serif, system-ui, sans-serif;
 }
+
+body.marketing-bg::before {
+  content: "";
+  position: fixed; inset: 0; pointer-events: none; z-index: -1;
+  background:
+    radial-gradient(circle at var(--cursor-x, 50%) var(--cursor-y, 30%), rgba(0, 242, 255, 0.08), transparent 18rem),
+    linear-gradient(180deg, rgba(3, 7, 18, 0.1), rgba(3, 7, 18, 0.8));
+}
+
+/* Fonts for marketing pages */
+body.marketing-bg h1,
+body.marketing-bg h2,
+body.marketing-bg h3 {
+  font-family: "Cabinet Grotesk", "Satoshi", ui-sans-serif, system-ui, sans-serif;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+/* ─── Dashboard background (active on /app) ──────────────────────────────── */
+body.dashboard-bg {
+  background: #020817;
+  color: #e2e8f0;
+}
+
+/* ─── Shared scrollbar ───────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.18); border-radius: 3px; }
+
+/* ─── Cabinet Grotesk + Satoshi loaded via index.html <link> ─────────────── */
