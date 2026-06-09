@@ -23,6 +23,28 @@ import { SiteLayoutComponent } from '../site-layout.component';
             <div class="hero-signal-inner">
               <div class="signal-toprow">
                 <span class="signal-title">Workforce Resilience Dashboard</span>
+                <div class="signal-header-actions">
+                  <div class="signal-user-menu">
+                    <span class="signal-user-chip" aria-hidden="true">
+                      <span class="signal-user-avatar">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                          <path d="M20 21a8 8 0 0 0-16 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                          <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                      </span>
+                    </span>
+                    <a class="signal-launch-link" routerLink="/app">
+                      <span class="signal-launch-icon" aria-hidden="true">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                          <path d="M4 14.5V19a1 1 0 0 0 1 1h5.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                          <path d="M20 9.5V5a1 1 0 0 0-1-1h-5.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                          <path d="M14 3h7v7M10 21H3v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </span>
+                      Launch App
+                    </a>
+                  </div>
+                </div>
               </div>
               <div class="signal-panel mt-8">
                 <p class="signal-label">Employees at Risk</p>
@@ -170,8 +192,72 @@ import { SiteLayoutComponent } from '../site-layout.component';
       border: 1px solid rgba(0,242,255,0.16); border-radius: 18px;
       background: rgba(3,7,18,0.22); padding: 1.55rem;
     }
-    .signal-toprow { display: flex; align-items: center; justify-content: space-between; font-size: 0.875rem; }
-    .signal-title { font-weight: 700; color: #00f2ff; }
+    .signal-toprow {
+      display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 0.75rem;
+      font-size: 0.875rem;
+    }
+    .signal-title { font-weight: 700; color: #00f2ff; min-width: 0; }
+    .signal-header-actions {
+      display: inline-flex; align-items: center; justify-content: flex-end;
+      flex-shrink: 0; line-height: 1;
+    }
+    .signal-user-menu {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.45rem;
+      min-width: 7.5rem;
+      flex-shrink: 0;
+    }
+    .signal-user-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      align-self: flex-end;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.04);
+    }
+    .signal-user-avatar {
+      display: inline-grid;
+      place-items: center;
+      width: 1.45rem;
+      height: 1.45rem;
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgba(0,242,255,0.22), rgba(112,0,255,0.28));
+      color: #fff;
+    }
+    .signal-launch-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      min-height: 2rem;
+      padding: 0 0.85rem;
+      border-radius: 999px;
+      border: 1px solid rgba(0,242,255,0.24);
+      background: linear-gradient(135deg, rgba(0,242,255,0.14), rgba(112,0,255,0.18));
+      color: #f8fbff;
+      font-size: 0.78rem;
+      font-weight: 800;
+      line-height: 1;
+      text-decoration: none;
+      white-space: nowrap;
+      box-shadow: 0 0 18px rgba(0,242,255,0.12);
+      transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+    }
+    .signal-launch-link:hover {
+      transform: translateY(-1px);
+      border-color: rgba(0,242,255,0.45);
+      box-shadow: 0 0 22px rgba(0,242,255,0.22);
+    }
+    .signal-launch-icon {
+      display: inline-grid;
+      place-items: center;
+      color: #7dd3fc;
+    }
     .signal-panel {
       border: 1px solid rgba(255,255,255,0.11); border-radius: 15px;
       background: rgba(255,255,255,0.035); padding: 1.35rem;

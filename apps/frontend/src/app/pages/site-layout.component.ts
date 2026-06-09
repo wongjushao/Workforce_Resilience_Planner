@@ -23,14 +23,37 @@ import { BodyClassService } from '../services/body-class.service';
         <div class="header-actions">
           <a class="btn-header-cta" routerLink="/how-to-use">How to use?</a>
           <div class="user-menu">
-            <button class="user-trigger" type="button" aria-label="User menu">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <path d="M20 21a8 8 0 0 0-16 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/>
+            <button
+              class="user-trigger"
+              type="button"
+              aria-label="Open account menu"
+              aria-haspopup="true"
+            >
+              <span class="user-avatar" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M20 21a8 8 0 0 0-16 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/>
+                </svg>
+              </span>
+              <svg class="user-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </button>
-            <div class="login-popover glass">
-              <a routerLink="/app">Launch App</a>
+            <div class="user-dropdown" role="menu">
+              <p class="user-dropdown-eyebrow">Workspace</p>
+              <a class="user-dropdown-item" routerLink="/app" role="menuitem">
+                <span class="user-dropdown-icon" aria-hidden="true">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                    <path d="M4 14.5V19a1 1 0 0 0 1 1h5.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M20 9.5V5a1 1 0 0 0-1-1h-5.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M14 3h7v7M10 21H3v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+                <span class="user-dropdown-copy">
+                  <span class="user-dropdown-title">Launch App</span>
+                  <span class="user-dropdown-sub">Open the dashboard</span>
+                </span>
+              </a>
             </div>
           </div>
         </div>
@@ -88,33 +111,150 @@ import { BodyClassService } from '../services/body-class.service';
       color: #fff; box-shadow: 0 0 24px rgba(0,242,255,0.35); flex-shrink: 0;
     }
     .header-actions {
-      display: flex; align-items: center; justify-content: flex-end; gap: 0.75rem; line-height: 1;
+      display: inline-flex; align-items: center; justify-content: flex-end;
+      gap: 0.75rem; flex-shrink: 0; line-height: 1;
     }
     .btn-header-cta {
       display: inline-flex; align-items: center; justify-content: center;
       height: 2.25rem; min-height: 2.25rem; padding: 0 1.1rem; border-radius: 999px;
-      background: #fff; color: #000; font-size: 0.875rem; font-weight: 900; text-decoration: none;
+      background: #fff; color: #000; font-size: 0.875rem; font-weight: 900; line-height: 1;
+      text-decoration: none; white-space: nowrap; flex-shrink: 0;
       box-shadow: 0 0 20px rgba(0,242,255,0.28); transition: transform 180ms ease, box-shadow 180ms ease;
     }
     .btn-header-cta:hover { transform: translateY(-2px); box-shadow: 0 0 24px rgba(0,242,255,0.48); }
-    .user-menu { position: relative; display: flex; height: 2.25rem; align-items: center; }
-    .user-trigger {
-      display: inline-grid; width: 2.25rem; height: 2.25rem; place-items: center;
-      border-radius: 999px; border: 1px solid rgba(255,255,255,0.18);
-      color: #fff; background: rgba(255,255,255,0.05); cursor: pointer;
+    .user-menu {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      flex-shrink: 0;
     }
-    .login-popover {
-      position: absolute; top: calc(100% + 10px); right: 0; min-width: 8.25rem;
-      padding: 0.45rem; border-radius: 16px; opacity: 0; pointer-events: none;
-      transform: translateY(-6px); z-index: 80;
+    .user-trigger {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      height: 2.25rem;
+      margin: 0;
+      padding: 0 0.55rem 0 0.35rem;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.14);
+      color: #e2e8f0;
+      background: rgba(255,255,255,0.04);
+      cursor: pointer;
+      transition: border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+    }
+    .user-trigger:hover,
+    .user-menu:focus-within .user-trigger {
+      border-color: rgba(0,242,255,0.42);
+      background: rgba(0,242,255,0.08);
+      box-shadow: 0 0 18px rgba(0,242,255,0.16);
+    }
+    .user-avatar {
+      display: inline-grid;
+      place-items: center;
+      width: 1.65rem;
+      height: 1.65rem;
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgba(0,242,255,0.22), rgba(112,0,255,0.28));
+      color: #fff;
+    }
+    .user-chevron {
+      display: block;
+      opacity: 0.72;
+      transition: transform 180ms ease, opacity 180ms ease;
+    }
+    .user-menu:hover .user-chevron,
+    .user-menu:focus-within .user-chevron {
+      transform: rotate(180deg);
+      opacity: 1;
+    }
+    .user-dropdown {
+      position: absolute;
+      top: calc(100% + 12px);
+      right: 0;
+      z-index: 80;
+      width: 15.5rem;
+      padding: 0.65rem;
+      border-radius: 18px;
+      background: rgba(8, 14, 28, 0.92);
+      border: 1px solid rgba(255,255,255,0.1);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow:
+        0 18px 50px rgba(0,0,0,0.42),
+        0 0 0 1px rgba(0,242,255,0.06) inset;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-8px) scale(0.98);
+      transform-origin: top right;
       transition: opacity 180ms ease, transform 180ms ease;
     }
-    .user-menu:hover .login-popover,
-    .user-menu:focus-within .login-popover { opacity: 1; pointer-events: auto; transform: translateY(0); }
-    .login-popover a {
-      display: flex; min-height: 2.35rem; align-items: center; justify-content: center;
-      border-radius: 999px; background: #fff; color: #000; font-size: 0.875rem;
-      font-weight: 900; text-decoration: none;
+    .user-dropdown::before {
+      content: "";
+      position: absolute;
+      top: -6px;
+      right: 1rem;
+      width: 12px;
+      height: 12px;
+      transform: rotate(45deg);
+      background: rgba(8, 14, 28, 0.92);
+      border-top: 1px solid rgba(255,255,255,0.1);
+      border-left: 1px solid rgba(255,255,255,0.1);
+    }
+    .user-menu:hover .user-dropdown,
+    .user-menu:focus-within .user-dropdown {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0) scale(1);
+    }
+    .user-dropdown-eyebrow {
+      margin: 0 0 0.45rem;
+      padding: 0 0.55rem;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #64748b;
+    }
+    .user-dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.7rem 0.75rem;
+      border-radius: 14px;
+      color: #f8fbff;
+      text-decoration: none;
+      transition: background 180ms ease, transform 180ms ease;
+    }
+    .user-dropdown-item:hover {
+      background: rgba(0,242,255,0.1);
+      transform: translateX(2px);
+    }
+    .user-dropdown-icon {
+      display: inline-grid;
+      place-items: center;
+      width: 2.25rem;
+      height: 2.25rem;
+      border-radius: 12px;
+      flex-shrink: 0;
+      background: linear-gradient(135deg, rgba(0,242,255,0.18), rgba(112,0,255,0.24));
+      color: #7dd3fc;
+      box-shadow: inset 0 0 0 1px rgba(0,242,255,0.18);
+    }
+    .user-dropdown-copy {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+      min-width: 0;
+    }
+    .user-dropdown-title {
+      font-size: 0.9rem;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+    .user-dropdown-sub {
+      font-size: 0.75rem;
+      line-height: 1.2;
+      color: #94a3b8;
     }
 
     /* ── Footer ── */
@@ -152,6 +292,9 @@ import { BodyClassService } from '../services/body-class.service';
       .brand-mark { font-size: 1.18rem; }
       .brand-icon { width: 1.85rem; height: 1.85rem; }
       .btn-header-cta { height: 2.2rem; min-height: 2.2rem; padding: 0 0.85rem; font-size: 0.8rem; }
+      .user-trigger { height: 2.2rem; padding: 0 0.5rem 0 0.3rem; }
+      .user-avatar { width: 1.55rem; height: 1.55rem; }
+      .user-dropdown { width: 14.5rem; }
       .footer-links { justify-content: flex-start; }
       .footer-panel { padding: 1.35rem; }
     }
