@@ -7,9 +7,13 @@ services:
     working_dir: /app/apps/backend
     environment:
       DATABASE_URL: file:/app/data/workforce.db
+      OLLAMA_URL: http://host.docker.internal:11434/api/generate
+      OLLAMA_MODEL: llama3.2
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./:/app
-    command: python -m db.ingest --skip-ollama
+    command: python -m db.ingest --classify
 
   backend:
     build:

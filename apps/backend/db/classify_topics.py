@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sqlite3
 from dataclasses import dataclass
@@ -24,8 +25,10 @@ from db import get_db_path
 from db.skill_topics import SKILL_TOPIC_TREE
 
 REVIEW_CONFIDENCE_THRESHOLD = 0.7
-DEFAULT_OLLAMA_URL = "http://localhost:11434/api/generate"
-DEFAULT_OLLAMA_MODEL = "llama3.2"
+DEFAULT_OLLAMA_URL = os.getenv(
+    "OLLAMA_URL", "http://localhost:11434/api/generate"
+)
+DEFAULT_OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2")
 
 # O*NET element names (category=skill) mapped to Soft Skills.
 SOFT_SKILL_NAMES = frozenset(
@@ -305,6 +308,14 @@ def classify_by_rules(
                     topic_id = _resolve_topic(topic_name, topic_map)
                     if topic_id is not None:
                         return Classification(topic_id, "rule", confidence)
+
+    if table == "skills" and category:
+        match = CATEGORY_TOPIC_MAP.get(category)
+        if match:
+            topic_name, confidence = match
+            topic_id = _resolve_topic(topic_name, topic_map)
+            if topic_id is not None:
+                return Classification(topic_id, "rule", confidence)
 
     for pattern, topic_name, confidence in NAME_TOPIC_RULES:
         if pattern.search(name):

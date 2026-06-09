@@ -1,4 +1,4 @@
-"""Ingest the O*NET XLSX files from the project `src/` folder into SQLite.
+"""Ingest the O*NET XLSX files from the project `data/src/` folder into SQLite.
 
 This performs a clean rebuild of the reference tables: it resets the database,
 replays migrations, and then loads all source data.
@@ -25,7 +25,7 @@ from db.migrate import apply_migrations, reset_database
 from db.skill_topics import seed_skill_topics
 
 # Project root is four levels up: apps/backend/db/ingest.py -> repo root.
-DEFAULT_SRC = Path(__file__).resolve().parents[3] / "src"
+DEFAULT_SRC = Path(__file__).resolve().parents[3] / "data" / "src"
 
 # Files whose rows are (occupation, element, score) measurements.
 # (filename, source label, O*NET element category)
