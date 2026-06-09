@@ -11,17 +11,26 @@ DROP TABLE IF EXISTS Employee;
 
 PRAGMA foreign_keys = ON;
 
+-- ==========================================
+-- 1. GLOBAL TAXONOMY & REFERENCE DATA
+-- ==========================================
+
 CREATE TABLE skill_topic (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT NOT NULL
+  name TEXT NOT NULL,
+  parent_id INTEGER,
+  FOREIGN KEY (parent_id) REFERENCES skill_topic (id),
+  UNIQUE (parent_id, name)
 );
 
-CREATE TABLE skills (
+CREATE TABLE essential_skills (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT UNIQUE NOT NULL,
   other_name TEXT,
   category TEXT,
-  skill_topic_id INTEGER NOT NULL,
+  skill_topic_id INTEGER,
+  topic_source TEXT CHECK (topic_source IN ('rule', 'ollama', 'manual', 'pending')),
+  topic_confidence REAL,
   FOREIGN KEY (skill_topic_id) REFERENCES skill_topic (id)
 );
 
@@ -40,7 +49,7 @@ CREATE TABLE occupation_skills (
   scale_type TEXT,
   score REAL,
   FOREIGN KEY (occupation_id) REFERENCES occupations (id),
-  FOREIGN KEY (skill_id) REFERENCES skills (id)
+  FOREIGN KEY (skill_id) REFERENCES essential_skills (id)
 );
 
 CREATE TABLE related_occupations (
@@ -59,15 +68,34 @@ CREATE TABLE alternate_titles (
   FOREIGN KEY (occupation_id) REFERENCES occupations (id)
 );
 
-CREATE TABLE technologies (
+-- ==========================================
+-- 2. SOFTWARE & TOOLS LAYER
+-- ==========================================
+
+CREATE TABLE skills (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  skill_name TEXT UNIQUE NOT NULL,
+  category TEXT,
+  skill_topic_id INTEGER,
+  topic_source TEXT CHECK (topic_source IN ('rule', 'ollama', 'manual', 'pending')),
+  topic_confidence REAL,
+  FOREIGN KEY (skill_topic_id) REFERENCES skill_topic (id)
+);
+
+CREATE TABLE occupation_technologies (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   occupation_id INTEGER NOT NULL,
-  technology_name TEXT,
-  category TEXT,
+  skill_id INTEGER NOT NULL,
   hot_technology INTEGER,
   in_demand INTEGER,
-  FOREIGN KEY (occupation_id) REFERENCES occupations (id)
+  FOREIGN KEY (occupation_id) REFERENCES occupations (id),
+  FOREIGN KEY (skill_id) REFERENCES skills (id),
+  UNIQUE (occupation_id, skill_id)
 );
+
+-- ==========================================
+-- 3. WORKFORCE & DEMAND DATA
+-- ==========================================
 
 CREATE TABLE intake_documents (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -131,13 +159,22 @@ CREATE TABLE vacancy_skills (
   FOREIGN KEY (skill_id) REFERENCES skills (id)
 );
 
+-- ==========================================
+-- INDEXES
+-- ==========================================
+
+CREATE INDEX idx_skill_topic_parent_id ON skill_topic (parent_id);
+CREATE INDEX idx_essential_skills_skill_topic_id ON essential_skills (skill_topic_id);
 CREATE INDEX idx_skills_skill_topic_id ON skills (skill_topic_id);
 CREATE INDEX idx_occupation_skills_occupation_id ON occupation_skills (occupation_id);
 CREATE INDEX idx_occupation_skills_skill_id ON occupation_skills (skill_id);
 CREATE INDEX idx_related_occupations_occupation_id ON related_occupations (occupation_id);
 CREATE INDEX idx_alternate_titles_occupation_id ON alternate_titles (occupation_id);
-CREATE INDEX idx_technologies_occupation_id ON technologies (occupation_id);
+CREATE INDEX idx_occupation_technologies_occupation_id ON occupation_technologies (occupation_id);
+CREATE INDEX idx_occupation_technologies_skill_id ON occupation_technologies (skill_id);
 CREATE INDEX idx_employees_current_role_id ON employees (current_role_id);
 CREATE INDEX idx_at_risk_submissions_employee_id ON at_risk_submissions (employee_id);
 CREATE INDEX idx_employee_skills_employee_id ON employee_skills (employee_id);
+CREATE INDEX idx_employee_skills_skill_id ON employee_skills (skill_id);
 CREATE INDEX idx_vacancy_skills_vacancy_id ON vacancy_skills (vacancy_id);
+CREATE INDEX idx_vacancy_skills_skill_id ON vacancy_skills (skill_id);

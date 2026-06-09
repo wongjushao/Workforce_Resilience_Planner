@@ -7,6 +7,10 @@ Usage (from apps/backend):
     DATABASE_URL=file:../../data/workforce.db python -m db.ingest
     # optional custom source folder:
     python -m db.ingest --src /path/to/src
+    # rule-based topic classification only (default):
+    python -m db.ingest --skip-ollama
+    # rules + Ollama for unclassified skills:
+    python -m db.ingest --classify
 """
 
 import argparse
@@ -16,13 +20,15 @@ from pathlib import Path
 import pandas as pd
 
 from db import get_db_path
+from db.classify_topics import classify_topics
 from db.migrate import apply_migrations, reset_database
+from db.skill_topics import seed_skill_topics
 
 # Project root is four levels up: apps/backend/db/ingest.py -> repo root.
 DEFAULT_SRC = Path(__file__).resolve().parents[3] / "src"
 
 # Files whose rows are (occupation, element, score) measurements.
-# (filename, source label, skill category)
+# (filename, source label, O*NET element category)
 ELEMENT_FILES = [
     ("Essential Skills.xlsx", "essential_skills", "skill"),
     ("Transferable Skills.xlsx", "transferable_skills", "skill"),
@@ -76,24 +82,8 @@ def load_occupations(conn: sqlite3.Connection, src: Path) -> dict[str, int]:
     return code_to_id
 
 
-def load_skill_topics(conn: sqlite3.Connection) -> dict[str, int]:
-    topic_names = sorted({category for _filename, _source, category in ELEMENT_FILES})
-    conn.executemany(
-        "INSERT OR IGNORE INTO skill_topic (name) VALUES (?)",
-        [(name,) for name in topic_names],
-    )
-    topic_to_id = {
-        name: topic_id
-        for topic_id, name in conn.execute("SELECT id, name FROM skill_topic")
-    }
-    print(f"  skill_topic: {len(topic_to_id)}")
-    return topic_to_id
-
-
-def load_skills(
-    conn: sqlite3.Connection, src: Path, topic_to_id: dict[str, int]
-) -> dict[str, int]:
-    """Collect the distinct element names across all element files as skills."""
+def load_essential_skills(conn: sqlite3.Connection, src: Path) -> dict[str, int]:
+    """Collect distinct O*NET element names across all element files."""
     seen: dict[str, tuple[str, str | None]] = {}
     for filename, _source, category in ELEMENT_FILES:
         df = _read(src, filename)
@@ -104,18 +94,16 @@ def load_skills(
 
     conn.executemany(
         """
-        INSERT OR IGNORE INTO skills (name, other_name, category, skill_topic_id)
-        VALUES (?, ?, ?, ?)
+        INSERT OR IGNORE INTO essential_skills
+          (name, other_name, category, skill_topic_id, topic_source, topic_confidence)
+        VALUES (?, ?, ?, NULL, NULL, NULL)
         """,
-        [
-            (name, other_name, category, topic_to_id[category])
-            for name, (category, other_name) in seen.items()
-        ],
+        [(name, other_name, category) for name, (category, other_name) in seen.items()],
     )
     name_to_id = {
-        name: sid for sid, name in conn.execute("SELECT id, name FROM skills")
+        name: sid for sid, name in conn.execute("SELECT id, name FROM essential_skills")
     }
-    print(f"  skills: {len(name_to_id)}")
+    print(f"  essential_skills: {len(name_to_id)}")
     return name_to_id
 
 
@@ -199,36 +187,69 @@ def load_alternate_titles(
     print(f"  alternate_titles: {len(rows)}")
 
 
-def load_technologies(
-    conn: sqlite3.Connection, src: Path, code_to_id: dict[str, int]
+def load_software_skills(conn: sqlite3.Connection, src: Path) -> dict[str, int]:
+    """Deduplicate Workplace Example values into the global skills catalog."""
+    df = _read(src, "Software Skills.xlsx")
+    seen: dict[str, str | None] = {}
+    for _, r in df.iterrows():
+        skill_name = _clean(r["Workplace Example"])
+        if skill_name is None:
+            continue
+        if skill_name not in seen:
+            seen[skill_name] = _clean(r["Element Name"])
+
+    conn.executemany(
+        """
+        INSERT OR IGNORE INTO skills
+          (skill_name, category, skill_topic_id, topic_source, topic_confidence)
+        VALUES (?, ?, NULL, NULL, NULL)
+        """,
+        [(skill_name, category) for skill_name, category in seen.items()],
+    )
+    name_to_id = {
+        name: sid
+        for sid, name in conn.execute("SELECT id, skill_name FROM skills")
+    }
+    print(f"  skills: {len(name_to_id)}")
+    return name_to_id
+
+
+def load_occupation_technologies(
+    conn: sqlite3.Connection,
+    src: Path,
+    code_to_id: dict[str, int],
+    name_to_id: dict[str, int],
 ) -> None:
     df = _read(src, "Software Skills.xlsx")
     rows = []
+    skipped = 0
     for _, r in df.iterrows():
         occ_id = code_to_id.get(_clean(r["O*NET-SOC Code"]))
-        if occ_id is None:
+        skill_id = name_to_id.get(_clean(r["Workplace Example"]))
+        if occ_id is None or skill_id is None:
+            skipped += 1
             continue
         rows.append(
             (
                 occ_id,
-                _clean(r["Workplace Example"]),
-                _clean(r["Element Name"]),
+                skill_id,
                 _to_bool(r["Hot Technology"]),
                 _to_bool(r["In Demand"]),
             )
         )
     conn.executemany(
         """
-        INSERT INTO technologies
-          (occupation_id, technology_name, category, hot_technology, in_demand)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT OR IGNORE INTO occupation_technologies
+          (occupation_id, skill_id, hot_technology, in_demand)
+        VALUES (?, ?, ?, ?)
         """,
         rows,
     )
-    print(f"  technologies: {len(rows)}")
+    note = f" (skipped {skipped} unmatched)" if skipped else ""
+    print(f"  occupation_technologies: {len(rows)}{note}")
 
 
-def ingest(src: Path) -> None:
+def ingest(src: Path, *, use_ollama: bool = False) -> None:
     db_path = get_db_path()
     Path(db_path).parent.mkdir(parents=True, exist_ok=True)
     print(f"Source folder: {src}")
@@ -241,14 +262,21 @@ def ingest(src: Path) -> None:
     try:
         conn.execute("PRAGMA foreign_keys = ON")
 
+        print("Seeding skill topics...")
+        seed_skill_topics(conn)
+
         print("Loading O*NET data...")
         code_to_id = load_occupations(conn, src)
-        topic_to_id = load_skill_topics(conn)
-        name_to_id = load_skills(conn, src, topic_to_id)
-        load_occupation_skills(conn, src, code_to_id, name_to_id)
+        essential_name_to_id = load_essential_skills(conn, src)
+        load_occupation_skills(conn, src, code_to_id, essential_name_to_id)
         load_related_occupations(conn, src, code_to_id)
         load_alternate_titles(conn, src, code_to_id)
-        load_technologies(conn, src, code_to_id)
+
+        software_name_to_id = load_software_skills(conn, src)
+        load_occupation_technologies(conn, src, code_to_id, software_name_to_id)
+
+        print("Classifying skill topics...")
+        classify_topics(conn, use_rules=True, use_ollama=use_ollama)
 
         conn.commit()
         print("Done.")
@@ -264,8 +292,19 @@ def main() -> None:
         default=DEFAULT_SRC,
         help=f"Folder containing the XLSX files (default: {DEFAULT_SRC})",
     )
+    parser.add_argument(
+        "--classify",
+        action="store_true",
+        help="Run Ollama classification after rule-based matching (requires local Ollama)",
+    )
+    parser.add_argument(
+        "--skip-ollama",
+        action="store_true",
+        help="Rule-based topic classification only (default behaviour)",
+    )
     args = parser.parse_args()
-    ingest(args.src)
+    use_ollama = args.classify and not args.skip_ollama
+    ingest(args.src, use_ollama=use_ollama)
 
 
 if __name__ == "__main__":

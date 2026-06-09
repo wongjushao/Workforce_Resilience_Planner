@@ -9,7 +9,7 @@ services:
       DATABASE_URL: file:/app/data/workforce.db
     volumes:
       - ./:/app
-    command: python -m db.migrate
+    command: python -m db.ingest --skip-ollama
 
   backend:
     build:

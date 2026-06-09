@@ -89,10 +89,10 @@ def list_employees():
     )
     skills = query(
         """
-        SELECT es.employee_id, s.id AS skill_id, s.name AS skill_name, es.proficiency
+        SELECT es.employee_id, s.id AS skill_id, s.skill_name, es.proficiency
         FROM employee_skills es
         JOIN skills s ON s.id = es.skill_id
-        ORDER BY es.employee_id, s.name
+        ORDER BY es.employee_id, s.skill_name
         """
     )
 
@@ -137,7 +137,7 @@ def list_vacancies():
     )
     skills = query(
         """
-        SELECT vs.vacancy_id, s.id AS skill_id, s.name AS skill_name, vs.weight
+        SELECT vs.vacancy_id, s.id AS skill_id, s.skill_name, vs.weight
         FROM vacancy_skills vs
         JOIN skills s ON s.id = vs.skill_id
         ORDER BY vs.vacancy_id, vs.weight DESC
