@@ -2,7 +2,7 @@ import os
 import sqlite3
 from collections import defaultdict
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
 
 from db import get_db_path
@@ -67,6 +67,20 @@ def list_at_risk_employees():
     return jsonify(intake.list_manual_submissions())
 
 
+@app.get("/api/occupations")
+def list_occupations():
+    search = (request.args.get("q") or "").strip()
+    params: tuple = ()
+    sql = "SELECT id, title FROM occupations"
+    if search:
+        sql += " WHERE title LIKE ? OR onet_code LIKE ?"
+        pattern = f"%{search}%"
+        params = (pattern, pattern)
+    sql += " ORDER BY title LIMIT 50"
+    rows = query(sql, params)
+    return jsonify([{"id": row["id"], "title": row["title"]} for row in rows])
+
+
 @app.get("/api/employees")
 def list_employees():
     employees = query(
@@ -123,6 +137,22 @@ def list_employees():
             }
             for employee in employees
         ]
+    )
+
+
+CAREER_PROFILE_REPORT = "Ethan_Lim_Wei_Jie_Career_Profile.pdf"
+
+
+@app.get("/api/reports/career-profile")
+def download_career_profile_report():
+    report_path = os.path.join(os.path.dirname(get_db_path()), "src", CAREER_PROFILE_REPORT)
+    if not os.path.isfile(report_path):
+        return jsonify({"error": "Report not found."}), 404
+    return send_file(
+        report_path,
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name=CAREER_PROFILE_REPORT,
     )
 
 

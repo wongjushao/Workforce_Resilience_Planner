@@ -15,11 +15,22 @@ type IntakeDocument = {
   rowCount: number | null; status: string; createdAt: string;
 };
 type AtRiskSubmission = {
-  id: number; name: string; currentRole: string | null;
-  department: string | null; email: string | null;
-  skills: string | null; departureReason: string; source: string; createdAt: string;
+  id: number; employeeId: number; name: string;
+  currentRole: string | null; department: string | null;
+  performance: number | null; documentId: number | null;
+  departureReason: string; source: string; createdAt: string;
 };
-type ManualForm = { name: string; currentRole: string; department: string; email: string; skills: string; departureReason: string; };
+type Occupation = { id: number; title: string };
+type ManualSkillRow = { name: string; proficiency: number };
+type ManualForm = {
+  name: string; age: string; gender: string; email: string; phone: string;
+  department: string; currentRoleId: string; experience: string;
+  departureReason: string; submissionDepartment: string;
+  performance: string; documentId: string;
+};
+type IntakeCsvColumn = {
+  header: string; required: boolean; dataType: 'text' | 'integer'; description: string; example: string;
+};
 
 interface MatchedVacancy extends Vacancy { matchType: 'same-field' | 'cross-role'; matchScore: number; }
 interface RadarSeries { label: string; scores: Record<string, number>; color: string; fillAlpha?: number; }
@@ -46,7 +57,28 @@ export class AppComponent implements OnInit, AfterViewChecked {
   selectedFile: File | null = null;
   uploadLoading = false; uploadError = ''; uploadSuccess = '';
   manualLoading = false; manualError = ''; manualSuccess = '';
-  manualForm: ManualForm = { name:'', currentRole:'', department:'', email:'', skills:'', departureReason:'' };
+  manualForm: ManualForm = this.blankManualForm();
+  manualSkillRows: ManualSkillRow[] = [];
+  occupations: Occupation[] = [];
+  roleSearch = '';
+  roleSearchLoading = false;
+  isDragOver = false;
+
+  readonly intakeCsvColumns: IntakeCsvColumn[] = [
+    { header: 'name', required: true, dataType: 'text', description: 'Employee full name', example: 'Ahmad Fadzillah' },
+    { header: 'age', required: false, dataType: 'integer', description: 'Employee age', example: '34' },
+    { header: 'gender', required: false, dataType: 'text', description: 'Gender', example: 'Female' },
+    { header: 'email', required: false, dataType: 'text', description: 'Work email', example: 'name@company.com' },
+    { header: 'phone', required: false, dataType: 'text', description: 'Contact number', example: '+60 12-345 6789' },
+    { header: 'department', required: false, dataType: 'text', description: 'Employee department', example: 'Engineering' },
+    { header: 'current_role_id', required: true, dataType: 'integer', description: 'Current role — must match occupations.id', example: '151252' },
+    { header: 'experience', required: false, dataType: 'integer', description: 'Years of experience', example: '5' },
+    { header: 'skills', required: true, dataType: 'text', description: 'Employee skills as comma-separated name:proficiency pairs (0–5)', example: 'Python:4, SQL:3.5' },
+    { header: 'departure_reason', required: true, dataType: 'text', description: 'Why reassignment is needed', example: 'Role restructuring' },
+    { header: 'submission_department', required: false, dataType: 'text', description: 'Department on reassignment record (optional; leave blank to use employee department)', example: 'Engineering' },
+    { header: 'performance', required: false, dataType: 'integer', description: 'Performance score', example: '82' },
+    { header: 'document_id', required: false, dataType: 'integer', description: 'Linked intake document ID', example: '1' },
+  ];
 
   // ── Local mock data (editable) ─────────────────────────────────────────────
   employees: Employee[] = [];
@@ -119,7 +151,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
     } finally { window.clearTimeout(tid); }
   }
 
-  private async loadIntakeData() {
+  async loadIntakeData() {
     this.intakeLoading = true; this.intakeError = '';
     try {
       const [docs, subs] = await Promise.all([
@@ -127,14 +159,74 @@ export class AppComponent implements OnInit, AfterViewChecked {
         this.fetchJson<AtRiskSubmission[]>('/api/intake/employees'),
       ]);
       this.documents = docs; this.submissions = subs;
+      void this.searchOccupations('');
     } catch (e) {
       this.intakeError = e instanceof Error ? e.message : 'Could not load intake data.';
     } finally { this.intakeLoading = false; }
   }
 
+  blankManualForm(): ManualForm {
+    return {
+      name: '', age: '', gender: '', email: '', phone: '',
+      department: '', currentRoleId: '', experience: '',
+      departureReason: '', submissionDepartment: '',
+      performance: '', documentId: '',
+    };
+  }
+
+  async searchOccupations(query: string) {
+    this.roleSearchLoading = true;
+    try {
+      const q = encodeURIComponent(query.trim());
+      this.occupations = await this.fetchJson<Occupation[]>(`/api/occupations?q=${q}`);
+    } catch {
+      this.occupations = [];
+    } finally {
+      this.roleSearchLoading = false;
+    }
+  }
+
+  onRoleSearchInput() {
+    void this.searchOccupations(this.roleSearch);
+  }
+
+  selectedOccupationTitle(): string {
+    const id = Number(this.manualForm.currentRoleId);
+    if (!id) return '';
+    return this.occupations.find(o => o.id === id)?.title ?? `Role #${id}`;
+  }
+
   onFileSelected(ev: Event) {
-    this.selectedFile = (ev.target as HTMLInputElement).files?.[0] ?? null;
-    this.uploadError = ''; this.uploadSuccess = '';
+    const file = (ev.target as HTMLInputElement).files?.[0] ?? null;
+    this.setSelectedFile(file);
+  }
+
+  onDragOver(ev: DragEvent) {
+    ev.preventDefault();
+    this.isDragOver = true;
+  }
+
+  onDragLeave(ev: DragEvent) {
+    ev.preventDefault();
+    this.isDragOver = false;
+  }
+
+  onFileDrop(ev: DragEvent) {
+    ev.preventDefault();
+    this.isDragOver = false;
+    const file = ev.dataTransfer?.files?.[0] ?? null;
+    this.setSelectedFile(file);
+  }
+
+  private setSelectedFile(file: File | null) {
+    this.selectedFile = file;
+    this.uploadError = '';
+    this.uploadSuccess = '';
+  }
+
+  clearSelectedFile() {
+    this.selectedFile = null;
+    this.uploadError = '';
   }
 
   async uploadDocument() {
@@ -146,21 +238,55 @@ export class AppComponent implements OnInit, AfterViewChecked {
     try {
       const rec = await this.fetchJson<IntakeDocument>('/api/intake/documents', { method:'POST', body:fd });
       this.documents = [rec, ...this.documents];
-      this.uploadSuccess = `Uploaded ${rec.originalFilename} successfully.`;
+      const rowNote = rec.rowCount != null ? ` · ${rec.rowCount} employee row${rec.rowCount === 1 ? '' : 's'} detected` : '';
+      this.uploadSuccess = `${rec.originalFilename} uploaded to server${rowNote}.`;
       this.selectedFile = null;
     } catch (e) { this.uploadError = e instanceof Error ? e.message : 'Upload failed.'; }
     finally { this.uploadLoading = false; }
   }
 
   async submitManualEmployee() {
+    if (!this.manualForm.name.trim()) {
+      this.manualError = 'Name is required.';
+      return;
+    }
+    if (!this.manualForm.currentRoleId) {
+      this.manualError = 'Current role is required.';
+      return;
+    }
+    if (!this.manualForm.departureReason.trim()) {
+      this.manualError = 'Departure reason is required.';
+      return;
+    }
+    const namedSkills = this.manualSkillRows.filter(s => s.name.trim());
+    if (!namedSkills.length) {
+      this.manualError = 'At least one employee skill is required.';
+      return;
+    }
+
     this.manualLoading = true; this.manualError = ''; this.manualSuccess = '';
+    const payload = {
+      name: this.manualForm.name.trim(),
+      age: this.manualForm.age ? Number(this.manualForm.age) : null,
+      gender: this.manualForm.gender.trim() || null,
+      email: this.manualForm.email.trim() || null,
+      phone: this.manualForm.phone.trim() || null,
+      department: this.manualForm.department.trim() || null,
+      currentRoleId: Number(this.manualForm.currentRoleId),
+      experience: this.manualForm.experience ? Number(this.manualForm.experience) : null,
+      skillsRaw: this.serializeSkillsRaw(namedSkills),
+      departureReason: this.manualForm.departureReason.trim(),
+      submissionDepartment: this.manualForm.submissionDepartment.trim() || null,
+      performance: this.manualForm.performance ? Number(this.manualForm.performance) : null,
+      documentId: this.manualForm.documentId ? Number(this.manualForm.documentId) : null,
+    };
     try {
       const rec = await this.fetchJson<AtRiskSubmission>('/api/intake/employees', {
-        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(this.manualForm),
+        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload),
       });
       this.submissions = [rec, ...this.submissions];
       this.manualSuccess = `Saved details for ${rec.name}.`;
-      this.manualForm = { name:'', currentRole:'', department:'', email:'', skills:'', departureReason:'' };
+      this.resetManualForm();
     } catch (e) { this.manualError = e instanceof Error ? e.message : 'Submission failed.'; }
     finally { this.manualLoading = false; }
   }
@@ -191,7 +317,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
   saveEmployee() {
     if (!this.empForm.name?.trim()) { this.empFormError = 'Name is required.'; return; }
     if (!this.empForm.currentRole?.trim()) { this.empFormError = 'Role is required.'; return; }
-    const skills = this.parseSkillsRaw(this.empForm.skillsRaw ?? '');
+    const skills = this.namedSkillsFromRaw(this.empForm.skillsRaw ?? '');
     const role = this.empForm.currentRole!.trim();
     const profile = getRoleProfile(role);
     const emp: Employee = {
@@ -467,9 +593,17 @@ export class AppComponent implements OnInit, AfterViewChecked {
   private parseSkillsRaw(raw: string): { name: string; proficiency: number }[] {
     if (!raw.trim()) return [];
     return raw.split(',').map(s => {
-      const [name, prof] = s.split(':');
+      const trimmed = s.trim();
+      if (!trimmed) return null;
+      const [name, prof] = trimmed.split(':');
       return { name: (name ?? '').trim(), proficiency: +(prof ?? 3) };
-    }).filter(s => s.name);
+    }).filter((s): s is { name: string; proficiency: number } => s !== null);
+  }
+  private namedSkillsFromRaw(raw: string) {
+    return this.parseSkillsRaw(raw).filter(s => s.name.trim());
+  }
+  private serializeSkillsRaw(rows: { name: string; proficiency: number }[]) {
+    return rows.map(s => `${s.name}:${s.proficiency}`).join(', ');
   }
   private parseScoresRaw(raw: string): Record<string, number> {
     const out: Record<string, number> = {};
@@ -498,6 +632,82 @@ export class AppComponent implements OnInit, AfterViewChecked {
 
   scoreEntries(scores: Record<string, number>): [string, number][] {
     return Object.entries(scores);
+  }
+
+  get linkedSubmissionCount(): number {
+    return this.submissions.filter(s => s.documentId != null).length;
+  }
+
+  get totalCsvEmployeeRows(): number {
+    return this.documents.reduce((sum, d) => sum + (d.rowCount ?? 0), 0);
+  }
+
+  downloadHrReport() {
+    const link = document.createElement('a');
+    link.href = '/api/reports/career-profile';
+    link.download = 'Ethan_Lim_Wei_Jie_Career_Profile.pdf';
+    link.click();
+  }
+
+  downloadCsvTemplate() {
+    const escape = (v: string) => (v.includes(',') || v.includes('"') ? `"${v.replace(/"/g, '""')}"` : v);
+    const headers = this.intakeCsvColumns.map(c => c.header);
+    const example = this.intakeCsvColumns.map(c => escape(c.example));
+    const csv = [headers.join(','), example.join(',')].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'employee-reassignment-template.csv';
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  get processedDocumentCount(): number {
+    return this.documents.filter(d => this.intakeStatusTone(d.status) === 'ok').length;
+  }
+
+  get manualFormProgress(): number {
+    let filled = 0;
+    if (this.manualForm.name.trim()) filled++;
+    if (this.manualForm.currentRoleId) filled++;
+    if (this.manualSkillRows.some(s => s.name.trim())) filled++;
+    if (this.manualForm.departureReason.trim()) filled++;
+    return Math.round((filled / 4) * 100);
+  }
+
+  get manualHasNamedSkills() { return this.manualSkillRows.some(s => s.name.trim()); }
+  addManualSkillRow() {
+    this.manualSkillRows.push({ name: '', proficiency: 3 });
+  }
+  removeManualSkillByIndex(i: number) {
+    this.manualSkillRows.splice(i, 1);
+  }
+  trackManualSkill(i: number, sk: ManualSkillRow) {
+    return sk;
+  }
+
+  resetManualForm() {
+    this.manualForm = this.blankManualForm();
+    this.manualSkillRows = [];
+    this.roleSearch = '';
+    this.manualError = '';
+    this.manualSuccess = '';
+    void this.searchOccupations('');
+  }
+
+  intakeStatusTone(status: string): 'ok' | 'pending' | 'error' {
+    const s = status.toLowerCase();
+    if (s.includes('fail') || s.includes('error')) return 'error';
+    if (s.includes('process') || s.includes('pending') || s.includes('queue')) return 'pending';
+    return 'ok';
+  }
+
+  formatIntakeDate(iso: string): string {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return iso;
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
   }
 
   formatFileSize(b: number) {

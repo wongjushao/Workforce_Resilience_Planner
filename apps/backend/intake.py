@@ -133,39 +133,176 @@ def save_document_upload(filename: str, file_bytes: bytes) -> dict:
         connection.close()
 
 
-def save_manual_submission(payload: dict) -> dict:
-    employee_id = payload.get("employeeId") or payload.get("employee_id")
-    departure_reason = (payload.get("departureReason") or payload.get("departure_reason") or "").strip()
-    performance = payload.get("performance")
-    document_id = payload.get("documentId") or payload.get("document_id")
-
-    if employee_id is None:
-        raise ValueError("Employee id is required.")
+def _optional_int(value, field_name: str) -> int | None:
+    if value is None or value == "":
+        return None
     try:
-        employee_id = int(employee_id)
+        return int(value)
     except (TypeError, ValueError) as error:
-        raise ValueError("Employee id must be an integer.") from error
-    if not departure_reason:
-        raise ValueError("Departure reason is required.")
-    if performance is not None:
-        try:
-            performance = int(performance)
-        except (TypeError, ValueError) as error:
-            raise ValueError("Performance must be an integer.") from error
-    if document_id is not None:
-        try:
-            document_id = int(document_id)
-        except (TypeError, ValueError) as error:
-            raise ValueError("Document id must be an integer.") from error
+        raise ValueError(f"{field_name} must be an integer.") from error
 
-    connection = get_connection()
-    try:
+
+def _parse_skills(value) -> list[tuple[str, float]]:
+    if value is None or value == "":
+        return []
+    if isinstance(value, list):
+        parsed: list[tuple[str, float]] = []
+        for item in value:
+            if not isinstance(item, dict):
+                continue
+            name = (item.get("name") or "").strip()
+            if not name:
+                continue
+            proficiency = item.get("proficiency", 3)
+            try:
+                parsed.append((name, float(proficiency)))
+            except (TypeError, ValueError):
+                parsed.append((name, 3.0))
+        return parsed
+
+    raw = str(value).strip()
+    if not raw:
+        return []
+
+    parsed = []
+    for part in raw.split(","):
+        part = part.strip()
+        if not part:
+            continue
+        if ":" in part:
+            name, proficiency_raw = part.split(":", 1)
+        else:
+            name, proficiency_raw = part, "3"
+        name = name.strip()
+        if not name:
+            continue
+        try:
+            proficiency = float(proficiency_raw.strip())
+        except ValueError:
+            proficiency = 3.0
+        parsed.append((name, proficiency))
+    return parsed
+
+
+def _resolve_skill_id(connection: sqlite3.Connection, skill_name: str) -> int:
+    row = connection.execute(
+        "SELECT id FROM skills WHERE lower(skill_name) = lower(?)",
+        (skill_name,),
+    ).fetchone()
+    if row is not None:
+        return row["id"]
+
+    cursor = connection.execute(
+        "INSERT INTO skills (skill_name, topic_source) VALUES (?, 'manual')",
+        (skill_name,),
+    )
+    return cursor.lastrowid
+
+
+def _save_employee_skills(
+    connection: sqlite3.Connection,
+    employee_id: int,
+    skills: list[tuple[str, float]],
+) -> None:
+    for skill_name, proficiency in skills:
+        skill_id = _resolve_skill_id(connection, skill_name)
+        connection.execute(
+            """
+            INSERT INTO employee_skills (employee_id, skill_id, proficiency)
+            VALUES (?, ?, ?)
+            ON CONFLICT(employee_id, skill_id) DO UPDATE SET
+              proficiency = excluded.proficiency
+            """,
+            (employee_id, skill_id, proficiency),
+        )
+
+
+def _save_employee_skills_from_payload(
+    connection: sqlite3.Connection,
+    employee_id: int,
+    payload: dict,
+) -> None:
+    raw = payload.get("skills") or payload.get("skillsRaw") or payload.get("skills_raw") or ""
+    skills = _parse_skills(raw)
+    if skills:
+        _save_employee_skills(connection, employee_id, skills)
+
+
+def _resolve_employee_id(connection: sqlite3.Connection, payload: dict) -> int:
+    employee_id = payload.get("employeeId") or payload.get("employee_id")
+    if employee_id is not None:
+        try:
+            employee_id = int(employee_id)
+        except (TypeError, ValueError) as error:
+            raise ValueError("Employee id must be an integer.") from error
         employee = connection.execute(
             "SELECT id FROM employees WHERE id = ?",
             (employee_id,),
         ).fetchone()
         if employee is None:
             raise ValueError(f"Employee {employee_id} was not found.")
+        return employee_id
+
+    name = (payload.get("name") or "").strip()
+    current_role_id = _optional_int(
+        payload.get("currentRoleId") or payload.get("current_role_id"),
+        "Current role",
+    )
+    if not name:
+        raise ValueError("Name is required.")
+    if current_role_id is None:
+        raise ValueError("Current role is required.")
+
+    occupation = connection.execute(
+        "SELECT id FROM occupations WHERE id = ?",
+        (current_role_id,),
+    ).fetchone()
+    if occupation is None:
+        raise ValueError(f"Occupation {current_role_id} was not found.")
+
+    age = _optional_int(payload.get("age"), "Age")
+    experience = _optional_int(payload.get("experience"), "Experience")
+    gender = (payload.get("gender") or "").strip() or None
+    email = (payload.get("email") or "").strip() or None
+    phone = (payload.get("phone") or "").strip() or None
+    department = (payload.get("department") or "").strip() or None
+
+    cursor = connection.execute(
+        """
+        INSERT INTO employees
+          (name, age, gender, email, phone, department, current_role_id, experience)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (name, age, gender, email, phone, department, current_role_id, experience),
+    )
+    employee_id = cursor.lastrowid
+    _save_employee_skills_from_payload(connection, employee_id, payload)
+    return employee_id
+
+
+def save_manual_submission(payload: dict) -> dict:
+    departure_reason = (payload.get("departureReason") or payload.get("departure_reason") or "").strip()
+    performance = _optional_int(payload.get("performance"), "Performance")
+    document_id = _optional_int(
+        payload.get("documentId") or payload.get("document_id"),
+        "Document",
+    )
+    submission_department = (payload.get("submissionDepartment") or payload.get("submission_department") or payload.get("department") or "").strip() or None
+    existing_employee_id = payload.get("employeeId") or payload.get("employee_id")
+
+    if not departure_reason:
+        raise ValueError("Departure reason is required.")
+
+    skills = _parse_skills(payload.get("skills") or payload.get("skillsRaw") or payload.get("skills_raw") or "")
+    if existing_employee_id is None and not skills:
+        raise ValueError("At least one employee skill is required.")
+
+    connection = get_connection()
+    try:
+        employee_id = _resolve_employee_id(connection, payload)
+
+        if existing_employee_id is not None and skills:
+            _save_employee_skills(connection, employee_id, skills)
 
         if document_id is not None:
             document = connection.execute(
@@ -184,7 +321,7 @@ def save_manual_submission(payload: dict) -> dict:
             (
                 employee_id,
                 departure_reason,
-                (payload.get("department") or "").strip() or None,
+                submission_department,
                 performance,
                 document_id,
             ),
@@ -261,11 +398,13 @@ def submission_row_to_dict(row: sqlite3.Row) -> dict:
     return {
         "id": row["id"],
         "employeeId": row["employee_id"],
+        "name": row["employee_name"],
         "employeeName": row["employee_name"],
         "currentRole": row["current_role"],
         "department": row["department"],
         "performance": row["performance"],
         "documentId": row["document_id"],
         "departureReason": row["departure_reason"],
+        "source": "manual",
         "createdAt": row["created_at"],
     }

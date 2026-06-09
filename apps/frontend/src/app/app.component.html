@@ -94,95 +94,528 @@
   <!-- ╔══════════════════════════════════════════════════════════════╗ -->
   <!-- ║  HR INTAKE                                                    ║ -->
   <!-- ╚══════════════════════════════════════════════════════════════╝ -->
-  <div *ngIf="activeNav==='intake'" class="section">
-    <div class="section-head">
-      <h1>HR Intake</h1>
-      <p class="sub">Upload industry reports or manually register at-risk employees</p>
-    </div>
+  <div *ngIf="activeNav==='intake'" class="section intake-section">
 
-    <div class="intake-tabs">
-      <button class="itab" [class.active]="intakeTab==='documents'" (click)="intakeTab='documents'">📄 Upload Documents</button>
-      <button class="itab" [class.active]="intakeTab==='manual'"    (click)="intakeTab='manual'">✏️ Manual Entry</button>
-    </div>
-
-    <!-- Documents tab -->
-    <div *ngIf="intakeTab==='documents'" class="card intake-card">
-      <h2>Upload Industry Report or HR File</h2>
-      <p class="hint">Accepted: CSV, PDF, DOC, DOCX (max 10 MB)</p>
-
-      <div class="upload-row">
-        <input type="file" accept=".csv,.pdf,.doc,.docx" (change)="onFileSelected($event)" />
-        <button class="btn-primary" [disabled]="uploadLoading" (click)="uploadDocument()">
-          {{ uploadLoading ? 'Uploading…' : 'Upload File' }}
-        </button>
+    <div class="section-head intake-hero">
+      <div>
+        <p class="intake-eyebrow">HR bulk intake</p>
+        <h1>Employee Reassignment Upload</h1>
+        <p class="sub">When many employees need redeployment, collect their details in a spreadsheet and upload it here. Our server stores the file and prepares records for portfolio planning.</p>
       </div>
-      <p *ngIf="selectedFile" class="hint">Selected: {{ selectedFile.name }}</p>
-      <p *ngIf="uploadError"   class="msg error">{{ uploadError }}</p>
-      <p *ngIf="uploadSuccess" class="msg success">{{ uploadSuccess }}</p>
-
-      <div *ngIf="documents.length" class="recent-list">
-        <h4>Recent Uploads</h4>
-        <ul class="doc-list">
-          <li *ngFor="let d of documents">
-            <div class="doc-head">
-              <strong>{{ d.originalFilename }}</strong>
-              <span>{{ d.fileType | uppercase }} · {{ formatFileSize(d.fileSize) }}</span>
-            </div>
-            <small>{{ d.createdAt }}</small>
-            <p *ngIf="d.rowCount !== null">Rows detected: {{ d.rowCount }}</p>
-            <pre *ngIf="d.extractedText" class="preview">{{ d.extractedText }}</pre>
-          </li>
-        </ul>
-      </div>
-      <p *ngIf="intakeLoading" class="hint">Loading…</p>
-      <p *ngIf="intakeError"   class="msg error">{{ intakeError }}</p>
+      <button type="button" class="btn-ghost intake-refresh" [disabled]="intakeLoading" (click)="loadIntakeData()">
+        {{ intakeLoading ? 'Refreshing…' : 'Refresh data' }}
+      </button>
     </div>
 
-    <!-- Manual tab -->
-    <div *ngIf="intakeTab==='manual'" class="card intake-card">
-      <h2>Register At-Risk Employee</h2>
-      <p class="hint">Submit a single employee record with departure reason for triage.</p>
-
-      <div class="form-grid">
-        <label class="field">Full Name *
-          <input type="text" [(ngModel)]="manualForm.name" placeholder="Ahmad Fadzillah" />
-        </label>
-        <label class="field">Current Role
-          <input type="text" [(ngModel)]="manualForm.currentRole" placeholder="Frontend Developer" />
-        </label>
-        <label class="field">Department
-          <input type="text" [(ngModel)]="manualForm.department" placeholder="Engineering" />
-        </label>
-        <label class="field">Email
-          <input type="email" [(ngModel)]="manualForm.email" />
-        </label>
-        <label class="field full">Skills (comma-separated)
-          <input type="text" [(ngModel)]="manualForm.skills" placeholder="Angular, TypeScript, Git" />
-        </label>
-        <label class="field full">Departure Reason *
-          <textarea rows="2" [(ngModel)]="manualForm.departureReason" placeholder="Reason for potential departure…"></textarea>
-        </label>
-        <div class="field full">
-          <button class="btn-primary" [disabled]="manualLoading" (click)="submitManualEmployee()">
-            {{ manualLoading ? 'Saving…' : 'Save Employee' }}
-          </button>
-          <p *ngIf="manualError"   class="msg error">{{ manualError }}</p>
-          <p *ngIf="manualSuccess" class="msg success">{{ manualSuccess }}</p>
+    <div class="kpi-row intake-kpi-row">
+      <div class="kpi-card intake-kpi">
+        <div class="kpi-icon intake-kpi-icon docs">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="kpi-val">{{ documents.length }}</div>
+          <div class="kpi-lbl">Files uploaded</div>
         </div>
       </div>
+      <div class="kpi-card intake-kpi">
+        <div class="kpi-icon intake-kpi-icon people">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="kpi-val">{{ totalCsvEmployeeRows }}</div>
+          <div class="kpi-lbl">Employees in CSV files</div>
+        </div>
+      </div>
+      <div class="kpi-card intake-kpi">
+        <div class="kpi-icon intake-kpi-icon link">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="kpi-val">{{ submissions.length }}</div>
+          <div class="kpi-lbl">Manual entries</div>
+        </div>
+      </div>
+      <div class="kpi-card intake-kpi">
+        <div class="kpi-icon intake-kpi-icon ready">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M22 4 12 14.01l-3-3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="kpi-val">{{ processedDocumentCount }}</div>
+          <div class="kpi-lbl">Received on server</div>
+        </div>
+      </div>
+    </div>
 
-      <div *ngIf="submissions.length" class="recent-list">
-        <h4>Recent Submissions</h4>
-        <ul class="doc-list">
-          <li *ngFor="let s of submissions">
-            <div class="doc-head">
-              <strong>{{ s.name }}</strong>
-              <span>{{ s.currentRole ?? '—' }} · {{ s.department ?? '—' }}</span>
+    <div class="intake-workflow" aria-label="Bulk upload workflow">
+      <div class="intake-step" [class.active]="intakeTab==='documents'" [class.done]="documents.length > 0">
+        <span class="intake-step-num">1</span>
+        <div>
+          <strong>Prepare your spreadsheet</strong>
+          <span>Download the template and fill in employee reassignment data</span>
+        </div>
+      </div>
+      <div class="intake-step-connector" aria-hidden="true"></div>
+      <div class="intake-step" [class.active]="intakeTab==='documents' && selectedFile" [class.done]="documents.length > 0">
+        <span class="intake-step-num">2</span>
+        <div>
+          <strong>Upload to server</strong>
+          <span>Send CSV or supporting HR documents (max 10 MB)</span>
+        </div>
+      </div>
+      <div class="intake-step-connector" aria-hidden="true"></div>
+      <div class="intake-step">
+        <span class="intake-step-num">3</span>
+        <div>
+          <strong>Plan redeployment</strong>
+          <span>Review matches and assign new roles in Portfolio</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="intake-tab-bar" role="tablist" aria-label="Intake modes">
+      <button
+        type="button"
+        role="tab"
+        class="intake-tab"
+        [class.active]="intakeTab==='documents'"
+        [attr.aria-selected]="intakeTab==='documents'"
+        (click)="intakeTab='documents'"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Bulk upload
+        <span class="intake-tab-count">{{ documents.length }}</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="intake-tab intake-tab-secondary"
+        [class.active]="intakeTab==='manual'"
+        [attr.aria-selected]="intakeTab==='manual'"
+        (click)="intakeTab='manual'"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Single employee
+        <span class="intake-tab-count">{{ submissions.length }}</span>
+      </button>
+    </div>
+
+    <p *ngIf="intakeError" class="msg error intake-banner">{{ intakeError }}</p>
+
+    <!-- Bulk upload tab -->
+    <div *ngIf="intakeTab==='documents'" class="intake-panel" role="tabpanel">
+      <div class="intake-bulk-banner card">
+        <div class="intake-bulk-banner-icon" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M14 2v6h6M8 13h8M8 17h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="intake-bulk-banner-copy">
+          <strong>For HR teams handling large reassignment batches</strong>
+          <p>Export or compile employee details into our CSV template, then upload once. PDF and Word files are accepted as supporting evidence alongside your spreadsheet.</p>
+        </div>
+        <button type="button" class="btn-primary intake-template-btn" (click)="downloadCsvTemplate()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Download CSV template
+        </button>
+      </div>
+
+      <div class="intake-layout intake-layout-bulk">
+        <div class="intake-main">
+          <div class="card intake-upload-card">
+            <div class="intake-card-head">
+              <div>
+                <h2>Upload reassignment file</h2>
+                <p class="hint">Drag your completed spreadsheet here, or browse to select a file from your computer.</p>
+              </div>
+              <span class="intake-recommended-pill">Recommended: CSV</span>
             </div>
-            <small>{{ s.createdAt }} · {{ s.source }}</small>
-            <p>{{ s.departureReason }}</p>
-          </li>
-        </ul>
+
+            <div
+              class="upload-dropzone intake-dropzone intake-dropzone-bulk"
+              [class.drag-over]="isDragOver"
+              [class.has-file]="selectedFile"
+              (dragover)="onDragOver($event)"
+              (dragleave)="onDragLeave($event)"
+              (drop)="onFileDrop($event)"
+            >
+              <div class="upload-dropzone-icon intake-drop-icon" aria-hidden="true">
+                <svg width="44" height="44" viewBox="0 0 24 24" fill="none">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <p class="upload-dropzone-title">
+                {{ selectedFile ? selectedFile.name : 'Drop your reassignment file here' }}
+              </p>
+              <p class="upload-dropzone-sub">
+                {{ selectedFile ? formatFileSize(selectedFile.size) : 'CSV for bulk employee data · PDF/DOC/DOCX for supporting documents · max 10 MB' }}
+              </p>
+              <div class="intake-format-chips">
+                <span class="format-chip format-chip-primary">CSV</span>
+                <span class="format-chip">PDF</span>
+                <span class="format-chip">DOC</span>
+                <span class="format-chip">DOCX</span>
+              </div>
+              <div class="upload-dropzone-actions">
+                <label class="btn-ghost upload-browse">
+                  Browse files
+                  <input type="file" accept=".csv,.pdf,.doc,.docx" (change)="onFileSelected($event)" hidden />
+                </label>
+                <button
+                  *ngIf="selectedFile"
+                  type="button"
+                  class="btn-ghost"
+                  (click)="clearSelectedFile()"
+                >Clear</button>
+                <button
+                  class="btn-primary"
+                  [disabled]="uploadLoading || !selectedFile"
+                  (click)="uploadDocument()"
+                >
+                  {{ uploadLoading ? 'Uploading to server…' : 'Upload to server' }}
+                </button>
+              </div>
+            </div>
+
+            <p *ngIf="uploadError"   class="msg error">{{ uploadError }}</p>
+            <p *ngIf="uploadSuccess" class="msg success">{{ uploadSuccess }}</p>
+          </div>
+
+          <div class="card intake-columns-card">
+            <div class="intake-card-head">
+              <div>
+                <h2>CSV column reference</h2>
+                <p class="hint">Use these column headers in your spreadsheet. Required fields must be filled for every employee row.</p>
+              </div>
+            </div>
+            <div class="intake-columns-table-wrap">
+              <table class="intake-columns-table">
+                <thead>
+                  <tr>
+                    <th>Column</th>
+                    <th>Type</th>
+                    <th>Required</th>
+                    <th>Description</th>
+                    <th>Example</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let col of intakeCsvColumns">
+                    <td><code>{{ col.header }}</code></td>
+                    <td><span class="col-type">{{ col.dataType }}</span></td>
+                    <td>
+                      <span [class]="col.required ? 'col-badge required' : 'col-badge optional'">
+                        {{ col.required ? 'Yes' : 'No' }}
+                      </span>
+                    </td>
+                    <td>{{ col.description }}</td>
+                    <td class="col-example">{{ col.example }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <aside class="intake-aside">
+          <div class="card intake-tip-card intake-tip-highlight">
+            <h3>How bulk upload works</h3>
+            <ol class="intake-steps-list">
+              <li>Download the CSV template and fill one row per employee.</li>
+              <li>Fill one row per employee — <code>current_role_id</code>, <code>skills</code>, and <code>departure_reason</code> are required.</li>
+              <li>Upload the completed file — we store it on the server.</li>
+              <li>Open Portfolio to match skills and plan new assignments.</li>
+            </ol>
+          </div>
+          <div class="card intake-tip-card">
+            <h3>When to use supporting docs</h3>
+            <ul class="intake-tip-list">
+              <li>Restructuring memos or HR policy letters (PDF/DOCX)</li>
+              <li>HRIS export printouts with role history</li>
+              <li>Union or legal correspondence about redeployment</li>
+            </ul>
+          </div>
+          <div class="card intake-tip-card">
+            <h3>Only one employee?</h3>
+            <p class="intake-tip-copy">Use single-employee entry instead of preparing a spreadsheet.</p>
+            <button type="button" class="btn-ghost intake-switch-tab" (click)="intakeTab='manual'">
+              Single employee entry →
+            </button>
+          </div>
+        </aside>
+      </div>
+
+      <div class="intake-library">
+        <div class="intake-library-head">
+          <div>
+            <h3>Upload history</h3>
+            <p class="hint sm">{{ documents.length }} file{{ documents.length === 1 ? '' : 's' }} stored on server{{ totalCsvEmployeeRows ? (' · ' + totalCsvEmployeeRows + ' employee rows detected') : '' }}</p>
+          </div>
+        </div>
+
+        <p *ngIf="intakeLoading" class="hint intake-empty">Loading uploads…</p>
+
+        <div *ngIf="!intakeLoading && !documents.length" class="intake-empty-state card">
+          <div class="intake-empty-icon" aria-hidden="true">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <strong>No uploads yet</strong>
+          <p>Download the template, fill in your reassignment data, and upload your first file.</p>
+          <button type="button" class="btn-ghost" (click)="downloadCsvTemplate()">Download CSV template</button>
+        </div>
+
+        <div *ngIf="documents.length" class="intake-doc-grid">
+          <article *ngFor="let d of documents" class="intake-doc-card card">
+            <div class="intake-doc-top">
+              <div class="intake-doc-icon" [class.csv]="d.fileType === 'csv'" aria-hidden="true">
+                <svg *ngIf="d.fileType === 'csv'" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke="currentColor" stroke-width="2"/>
+                  <path d="M8 13h8M8 17h5M14 2v6h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <svg *ngIf="d.fileType !== 'csv'" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke="currentColor" stroke-width="2"/>
+                  <path d="M14 2v6h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <span [class]="'status-pill status-' + intakeStatusTone(d.status)">{{ d.status }}</span>
+            </div>
+            <h4 class="intake-doc-name" [title]="d.originalFilename">{{ d.originalFilename }}</h4>
+            <div class="intake-doc-meta">
+              <span class="type-pill" [class.type-csv]="d.fileType === 'csv'">{{ d.fileType | uppercase }}</span>
+              <span>{{ formatFileSize(d.fileSize) }}</span>
+              <span *ngIf="d.rowCount != null" class="intake-row-badge">{{ d.rowCount }} employee{{ d.rowCount === 1 ? '' : 's' }}</span>
+            </div>
+            <p class="intake-doc-date">Uploaded {{ formatIntakeDate(d.createdAt) }}</p>
+            <pre *ngIf="d.extractedText" class="preview intake-doc-preview">{{ d.extractedText }}</pre>
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <!-- Single employee tab -->
+    <div *ngIf="intakeTab==='manual'" class="intake-panel" role="tabpanel">
+      <div class="intake-single-banner card">
+        <p><strong>Single employee entry</strong> — use this when only one person needs reassignment. For batches of employees, use <button type="button" class="intake-inline-link" (click)="intakeTab='documents'">Bulk upload</button> instead.</p>
+      </div>
+      <div class="intake-layout intake-layout-form">
+        <div class="intake-main">
+          <div class="card intake-form-card">
+            <div class="intake-card-head">
+              <div>
+                <h2>Register one employee for reassignment</h2>
+                <p class="hint">Required fields are marked with * · link an uploaded file if available.</p>
+              </div>
+              <div class="intake-form-progress" aria-label="Required fields completed">
+                <span class="intake-form-progress-label">{{ manualFormProgress }}% complete</span>
+                <div class="intake-form-progress-bar">
+                  <span [style.width.%]="manualFormProgress"></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-section intake-form-block">
+              <div class="intake-form-block-head">
+                <span class="intake-form-step">A</span>
+                <h3 class="form-section-title">Employee details</h3>
+              </div>
+              <div class="form-grid">
+                <label class="field">Full name *
+                  <input type="text" [(ngModel)]="manualForm.name" placeholder="Ahmad Fadzillah" />
+                </label>
+                <label class="field">Age
+                  <input type="number" min="0" [(ngModel)]="manualForm.age" placeholder="34" />
+                </label>
+                <label class="field">Gender
+                  <input type="text" [(ngModel)]="manualForm.gender" placeholder="Female" />
+                </label>
+                <label class="field">Email
+                  <input type="email" [(ngModel)]="manualForm.email" placeholder="name@company.com" />
+                </label>
+                <label class="field">Phone
+                  <input type="text" [(ngModel)]="manualForm.phone" placeholder="+60 12-345 6789" />
+                </label>
+                <label class="field">Department
+                  <input type="text" [(ngModel)]="manualForm.department" placeholder="Engineering" />
+                </label>
+                <label class="field">Experience (years)
+                  <input type="number" min="0" [(ngModel)]="manualForm.experience" placeholder="5" />
+                </label>
+                <label class="field full intake-role-field">
+                  Current role *
+                  <input
+                    type="text"
+                    [(ngModel)]="roleSearch"
+                    (input)="onRoleSearchInput()"
+                    placeholder="Search O*NET occupation…"
+                  />
+                  <select [(ngModel)]="manualForm.currentRoleId">
+                    <option value="">Select occupation</option>
+                    <option *ngFor="let o of occupations" [value]="o.id">{{ o.title }}</option>
+                  </select>
+                  <span *ngIf="manualForm.currentRoleId" class="field-hint intake-role-selected">
+                    Selected: {{ selectedOccupationTitle() }}
+                  </span>
+                  <span *ngIf="roleSearchLoading" class="field-hint">Searching roles…</span>
+                </label>
+              </div>
+              <div class="skill-editor">
+                <div class="skill-editor-head">
+                  <h4>Skills *</h4>
+                  <button type="button" class="btn-sm" (click)="addManualSkillRow()">+ Add Skill</button>
+                </div>
+                <p class="field-hint">Rate each skill from 0–5. Example: Python:4, SQL:3.5</p>
+                <div *ngFor="let sk of manualSkillRows; let i=index; trackBy: trackManualSkill" class="skill-edit-row">
+                  <input class="sk-name" type="text" [(ngModel)]="sk.name" placeholder="Skill name" />
+                  <input class="sk-prof" type="number" [(ngModel)]="sk.proficiency" min="0" max="5" step="0.1" />
+                  <button type="button" class="icon-btn danger sm" (click)="removeManualSkillByIndex(i)">✕</button>
+                </div>
+                <p *ngIf="!manualSkillRows.length" class="hint sm">No skills yet. Click "+ Add Skill".</p>
+              </div>
+            </div>
+
+            <div class="form-section intake-form-block">
+              <div class="intake-form-block-head">
+                <span class="intake-form-step">B</span>
+                <h3 class="form-section-title">At-risk assessment</h3>
+              </div>
+              <div class="form-grid">
+                <label class="field full">Departure reason *
+                  <textarea rows="3" [(ngModel)]="manualForm.departureReason" placeholder="Reason for potential departure…"></textarea>
+                </label>
+                <label class="field">Assessment department
+                  <input type="text" [(ngModel)]="manualForm.submissionDepartment" placeholder="Optional override" />
+                  <span class="field-hint">Leave blank to use employee department</span>
+                </label>
+                <label class="field">Performance score
+                  <input type="number" min="0" max="100" [(ngModel)]="manualForm.performance" placeholder="0–100" />
+                </label>
+                <label class="field full">Linked document
+                  <select [(ngModel)]="manualForm.documentId">
+                    <option value="">None</option>
+                    <option *ngFor="let d of documents" [value]="d.id">
+                      #{{ d.id }} · {{ d.originalFilename }}
+                    </option>
+                  </select>
+                  <span class="field-hint">Optional link to an uploaded intake document</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="intake-form-footer">
+              <button class="btn-primary" [disabled]="manualLoading" (click)="submitManualEmployee()">
+                {{ manualLoading ? 'Saving…' : 'Save employee' }}
+              </button>
+              <button type="button" class="btn-ghost" (click)="resetManualForm()">Clear form</button>
+              <p *ngIf="manualError"   class="msg error">{{ manualError }}</p>
+              <p *ngIf="manualSuccess" class="msg success">{{ manualSuccess }}</p>
+            </div>
+          </div>
+        </div>
+
+        <aside class="intake-aside">
+          <div class="card intake-checklist">
+            <h3>Required checklist</h3>
+            <ul>
+              <li [class.done]="manualForm.name.trim()">
+                <span class="check-icon" aria-hidden="true"></span>
+                Employee full name
+              </li>
+              <li [class.done]="manualForm.currentRoleId">
+                <span class="check-icon" aria-hidden="true"></span>
+                Current O*NET role
+              </li>
+              <li [class.done]="manualHasNamedSkills">
+                <span class="check-icon" aria-hidden="true"></span>
+                At least one employee skill
+              </li>
+              <li [class.done]="manualForm.departureReason.trim()">
+                <span class="check-icon" aria-hidden="true"></span>
+                Departure reason
+              </li>
+            </ul>
+          </div>
+          <div *ngIf="!documents.length" class="card intake-tip-card">
+            <h3>No files uploaded yet</h3>
+            <p class="intake-tip-copy">Upload a bulk CSV first if you are processing many employees at once.</p>
+            <button type="button" class="btn-ghost intake-switch-tab" (click)="intakeTab='documents'">
+              Go to bulk upload →
+            </button>
+          </div>
+        </aside>
+      </div>
+
+      <div class="intake-library">
+        <div class="intake-library-head">
+          <div>
+            <h3>Recent single entries</h3>
+            <p class="hint sm">{{ submissions.length }} employee{{ submissions.length === 1 ? '' : 's' }} entered individually</p>
+          </div>
+        </div>
+
+        <div *ngIf="!submissions.length" class="intake-empty-state card">
+          <div class="intake-empty-icon people" aria-hidden="true">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <strong>No entries yet</strong>
+          <p>Complete the form above to register a single employee, or switch to bulk upload for larger batches.</p>
+          <button type="button" class="btn-ghost" (click)="intakeTab='documents'">Go to bulk upload</button>
+        </div>
+
+        <div *ngIf="submissions.length" class="intake-submission-list">
+          <article *ngFor="let s of submissions" class="intake-submission-card card">
+            <div class="intake-submission-main">
+              <div class="mini-avatar intake-sub-avatar" [style.background]="avatarBg(s.employeeId || s.id)">
+                {{ initials(s.name) }}
+              </div>
+              <div class="intake-submission-copy">
+                <div class="intake-submission-head">
+                  <strong>{{ s.name }}</strong>
+                  <span class="intake-sub-date">{{ formatIntakeDate(s.createdAt) }}</span>
+                </div>
+                <p class="intake-sub-role">{{ s.currentRole ?? 'Role pending' }} · {{ s.department ?? 'No department' }}</p>
+                <p class="sub-reason">{{ s.departureReason }}</p>
+              </div>
+            </div>
+            <div class="intake-submission-stats">
+              <div class="intake-sub-stat">
+                <span class="intake-sub-stat-label">Performance</span>
+                <span class="intake-sub-stat-val">{{ s.performance ?? '—' }}</span>
+              </div>
+              <div class="intake-sub-stat">
+                <span class="intake-sub-stat-label">Document</span>
+                <span class="intake-sub-stat-val">{{ s.documentId ? ('#' + s.documentId) : 'None' }}</span>
+              </div>
+              <div class="intake-sub-stat">
+                <span class="intake-sub-stat-label">Source</span>
+                <span class="intake-sub-stat-val">{{ s.source }}</span>
+              </div>
+            </div>
+          </article>
+        </div>
       </div>
     </div>
   </div>
@@ -537,10 +970,23 @@
           </div>
         </div>
 
-        <div class="hr-actions">
-          <button class="action-btn accept">✓ Accept for Reskilling</button>
-          <button class="action-btn defer">⏸ Defer Decision</button>
-          <button class="action-btn reject">✗ Close Case</button>
+        <div class="hr-report-bar card">
+          <div class="hr-report-icon" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/>
+              <path d="M14 2v6h6M8 13h8M8 17h5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="hr-report-copy">
+            <strong>Career transition report</strong>
+            <p>Download the full HR summary as a PDF for records and manager review.</p>
+          </div>
+          <button type="button" class="btn-primary hr-report-btn" (click)="downloadHrReport()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Download Report
+          </button>
         </div>
       </div>
 

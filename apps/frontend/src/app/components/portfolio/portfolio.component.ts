@@ -262,10 +262,23 @@ interface SkillGapRow {
           </div>
         </div>
 
-        <div class="hr-actions">
-          <button class="action-btn accept">✓ Accept for Reskilling</button>
-          <button class="action-btn defer">⏸ Defer Decision</button>
-          <button class="action-btn reject">✗ Close Case</button>
+        <div class="hr-report-bar">
+          <div class="hr-report-icon" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/>
+              <path d="M14 2v6h6M8 13h8M8 17h5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="hr-report-copy">
+            <strong>Career transition report</strong>
+            <p>Download the full HR summary as a PDF for records and manager review.</p>
+          </div>
+          <button type="button" class="hr-report-btn" (click)="downloadHrReport()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Download Report
+          </button>
         </div>
       </div>
 
@@ -421,18 +434,32 @@ interface SkillGapRow {
     .rec-action { color: #4ade80 !important; }
     .no-match-text { color: #f87171 !important; }
 
-    .hr-actions { display: flex; gap: 12px; }
-    .action-btn {
-      flex: 1; padding: 12px; border-radius: 10px; border: none;
-      font-size: 0.88rem; font-weight: 700; font-family: 'DM Sans', sans-serif;
-      cursor: pointer; transition: all 0.2s;
+    .hr-report-bar {
+      display: flex; align-items: center; gap: 18px;
+      padding: 18px 20px; border-radius: 12px;
+      background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(15,23,42,0.6));
+      border: 1px solid rgba(59,130,246,0.22);
     }
-    .action-btn.accept { background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
-    .action-btn.accept:hover { background: rgba(34,197,94,0.25); }
-    .action-btn.defer { background: rgba(234,179,8,0.12); color: #fbbf24; border: 1px solid rgba(234,179,8,0.25); }
-    .action-btn.defer:hover { background: rgba(234,179,8,0.22); }
-    .action-btn.reject { background: rgba(239,68,68,0.12); color: #f87171; border: 1px solid rgba(239,68,68,0.25); }
-    .action-btn.reject:hover { background: rgba(239,68,68,0.22); }
+    .hr-report-icon {
+      width: 52px; height: 52px; border-radius: 14px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(59,130,246,0.14); color: #60a5fa;
+    }
+    .hr-report-copy { flex: 1; min-width: 0; }
+    .hr-report-copy strong {
+      display: block; font-size: 0.92rem; color: #e2e8f0; margin-bottom: 4px;
+    }
+    .hr-report-copy p {
+      margin: 0; font-size: 0.8rem; color: #94a3b8; line-height: 1.5;
+    }
+    .hr-report-btn {
+      flex-shrink: 0; display: inline-flex; align-items: center; gap: 8px;
+      white-space: nowrap; padding: 10px 20px; border: none; border-radius: 8px;
+      background: #1d4ed8; color: #fff; font-size: 0.85rem; font-weight: 700;
+      font-family: 'DM Sans', sans-serif; cursor: pointer;
+      box-shadow: 0 4px 14px rgba(29,78,216,0.25); transition: background 0.15s, box-shadow 0.15s;
+    }
+    .hr-report-btn:hover { background: #2563eb; box-shadow: 0 6px 18px rgba(37,99,235,0.35); }
   `],
 })
 export class PortfolioComponent implements OnChanges {
@@ -486,6 +513,13 @@ export class PortfolioComponent implements OnChanges {
       const required = +(vacancy.requiredSkillScores[ax.key] ?? 0).toFixed(1);
       return { skill: ax.label, current, required, gap: +(current - required).toFixed(1) };
     });
+  }
+
+  downloadHrReport() {
+    const link = document.createElement('a');
+    link.href = '/api/reports/career-profile';
+    link.download = 'Ethan_Lim_Wei_Jie_Career_Profile.pdf';
+    link.click();
   }
 
   riskNarrative(emp: Employee): string {
