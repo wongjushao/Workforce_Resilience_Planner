@@ -1,4 +1,15 @@
 services:
+  etl-pipeline:
+    build:
+      context: .
+      dockerfile: scripts/Dockerfile
+    container_name: wrp-etl-pipeline
+    working_dir: /app/scripts
+    volumes:
+      - ./data:/app/data
+      - ./scripts:/app/scripts
+    command: ["--headless", "--out", "/app/data/src/jobs.json", "--stdout"]
+
   db-setup:
     build:
       context: .
@@ -15,6 +26,23 @@ services:
       - ./:/app
     command: python -m db.ingest --classify
 
+  job-load:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    container_name: wrp-job-load
+    working_dir: /app/apps/backend
+    environment:
+      DATABASE_URL: file:/app/data/workforce.db
+    volumes:
+      - ./:/app
+    command: python -m db.load_jobs --src /app/data/src/jobs.json
+    depends_on:
+      db-setup:
+        condition: service_completed_successfully
+      etl-pipeline:
+        condition: service_completed_successfully
+
   backend:
     build:
       context: .
@@ -30,7 +58,7 @@ services:
     ports:
       - "5000:5000"
     depends_on:
-      db-setup:
+      job-load:
         condition: service_completed_successfully
 
   frontend:

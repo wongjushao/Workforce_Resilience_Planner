@@ -16,6 +16,12 @@ venv/
 data/*.db
 data/uploads/*
 !data/uploads/.gitkeep
+data/src/jobs.json
+output/
 *.sqlite
 *.sqlite3
 *.log
+.DS_Store
+*:Zone.Identifier
+.idea/
+.vscode/

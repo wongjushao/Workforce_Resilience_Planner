@@ -159,6 +159,13 @@ _NON_PORTAL_PATH_FRAGMENTS = [
 # If fewer links are found, the scraper will continue trying other portals.
 MIN_CONFIDENT_JOBS = 3
 
+# Phenom home pages often show only a handful of featured jobs before a
+# "View more" link; the full listing lives on search-results.
+_PHENOM_FEATURED_JOB_CAP = 10
+_FULL_JOB_SEARCH_PATH_HINTS = (
+    "search-results", "job-search", "job-results", "jobresults",
+)
+
 SECTION_HEADINGS = [
     "required skills",
     "skills",
@@ -186,6 +193,94 @@ def _clean_text(value: Optional[str]) -> Optional[str]:
         return None
     cleaned = re.sub(r"\s+", " ", value).strip("\n\r\t :;-")
     return cleaned or None
+
+
+_PPG_BUSINESS_UNITS = (
+    "Operations",
+    "Industrial Coatings",
+    "Architectural Coatings",
+    "Architectural EMEA",
+    "Protective and Marine Ctgs",
+    "Automotive OEM Coatings",
+    "Automotive Refinish",
+    "Digital",
+    "Finance",
+    "Science",
+    "EHS / Product Stewardship",
+)
+
+_PPG_METADATA_TAIL = (
+    r"(?:\s+Job\s+Type\s+.+?)?"
+    r"(?:\s+Job\s+Id\s+\S+)?"
+    r"(?:\s+(?:On-Site|Hybrid|Remote|Onsite))?"
+    r"(?:\s+Apply\s+Now)?"
+)
+
+
+def _extract_ppg_category(text: str) -> Optional[str]:
+    """Extract the PPG/Phenom 'Category' field used as department."""
+    match = re.search(
+        rf"\bCategory\s+([^J\n]{{2,80}}?){_PPG_METADATA_TAIL}",
+        text,
+        re.IGNORECASE,
+    )
+    if match:
+        return _clean_text(match.group(1))
+    return None
+
+
+def _extract_ppg_location(text: str) -> Optional[str]:
+    """Extract location from PPG/Phenom metadata blocks."""
+    business_pattern = "|".join(re.escape(unit) for unit in _PPG_BUSINESS_UNITS)
+    match = re.search(
+        rf"(?P<location>[A-Za-z][A-Za-z0-9\s,.\-]{{4,120}}?)\s+"
+        rf"(?:(?:{business_pattern})\s+)?Category\s+",
+        text,
+        re.IGNORECASE,
+    )
+    if match:
+        return _clean_text(match.group("location"))
+
+    labeled = re.search(r"\bLocation\s*:\s*([^\n]+)", text, re.IGNORECASE)
+    if labeled:
+        raw = labeled.group(1)
+        raw = re.split(
+            rf"\s+(?:{business_pattern}|Category|Job\s+Type)\b",
+            raw,
+            maxsplit=1,
+            flags=re.IGNORECASE,
+        )[0]
+        return _clean_text(raw)
+
+    return None
+
+
+def _extract_labeled_field(text: str, labels: List[str]) -> Optional[str]:
+    """Extract a labeled metadata field that uses an explicit colon."""
+    label_pattern = "|".join(re.escape(label) for label in labels)
+    match = re.search(
+        rf"\b(?:{label_pattern})\s*:\s*([^\n.;]{{2,80}})",
+        text,
+        re.IGNORECASE,
+    )
+    if match:
+        return _clean_text(match.group(1))
+    return None
+
+
+def _trim_location_value(location: Optional[str]) -> Optional[str]:
+    if not location:
+        return None
+
+    trimmed = location
+    business_pattern = "|".join(re.escape(unit) for unit in _PPG_BUSINESS_UNITS)
+    trimmed = re.split(
+        rf"\s+(?:{business_pattern}|Category|Job\s+Type|Job\s+Id|On-Site|Hybrid|Remote|Onsite|Apply\s+Now)\b",
+        trimmed,
+        maxsplit=1,
+        flags=re.IGNORECASE,
+    )[0]
+    return _clean_text(trimmed)
 
 
 def _normalize_url(base_url: str, href: str) -> str:
@@ -717,6 +812,63 @@ def _detect_phenom_portal(page) -> bool:
     return "phenompeople.com" in html or "phenompeople" in html.lower() or "phApp" in html
 
 
+def _is_full_search_portal_url(url: str) -> bool:
+    """Return True when *url* points at a full job-search listing page."""
+    path = urlparse(url.lower()).path
+    return any(hint in path for hint in _FULL_JOB_SEARCH_PATH_HINTS)
+
+
+def _find_full_search_portal_url(page) -> Optional[str]:
+    """Locate a full job-search portal URL from the current page."""
+    for url in find_portal_links(page):
+        if _is_full_search_portal_url(url):
+            return url
+    return None
+
+
+def _has_enough_jobs(job_links: List[str], max_jobs: int) -> bool:
+    """Return True when we likely have the full listing, not a featured subset."""
+    threshold = min(max_jobs, _PHENOM_FEATURED_JOB_CAP)
+    return len(job_links) >= threshold
+
+
+def _try_full_search_portal(
+    page, job_links: List[str], company: str, max_jobs: int,
+) -> List[str]:
+    """Open the full search-results portal when only featured jobs were found."""
+    if _has_enough_jobs(job_links, max_jobs):
+        return job_links
+
+    search_url = _find_full_search_portal_url(page)
+    if not search_url:
+        return job_links
+
+    print(f"[{company}] Expanding via full search portal: {search_url}")
+    try:
+        _goto_and_wait(page, search_url)
+        expanded = _try_gather_jobs(page, company)
+        if len(expanded) >= MIN_CONFIDENT_JOBS:
+            expanded = _follow_pagination(page, expanded, company, max_jobs)
+            if len(expanded) > len(job_links):
+                print(
+                    f"[{company}] Expanded to {len(expanded)} jobs via search portal"
+                )
+                return expanded
+    except Exception as exc:
+        print(f"[{company}] Full search portal failed: {exc}")
+    return job_links
+
+
+def _finalize_job_links(
+    page, job_links: List[str], company: str, max_jobs: int,
+) -> List[str]:
+    """Paginate the current page and expand via search-results when needed."""
+    if not job_links:
+        return job_links
+    job_links = _follow_pagination(page, job_links, company, max_jobs)
+    return _try_full_search_portal(page, job_links, company, max_jobs)
+
+
 def discover_pagination_urls(page, max_pages: int = 10) -> List[str]:
     """Find candidate pagination URLs from the current page.
 
@@ -853,19 +1005,23 @@ def extract_job_fields(page, company: str) -> Dict:
     role = title
     company_name = company
 
-    location = None
-    location_match = re.search(r"Location[:\s]*([A-Za-z0-9,\-\s/()]+)", text, re.IGNORECASE)
-    if location_match:
-        location = _clean_text(location_match.group(1))
+    location = _extract_ppg_location(text)
+    if not location:
+        location_match = re.search(
+            r"\bLocation\s*:\s*([^\n]+)",
+            text,
+            re.IGNORECASE,
+        )
+        if location_match:
+            location = _trim_location_value(location_match.group(1))
+    location = _trim_location_value(location)
 
-    department = None
-    department_match = re.search(
-        r"(?:Department|Function|Business Unit|Division|Area|Team)[:\s]*([A-Za-z0-9,&/()\-\s]+)",
-        text,
-        re.IGNORECASE,
-    )
-    if department_match:
-        department = _clean_text(department_match.group(1))
+    department = _extract_ppg_category(text)
+    if not department:
+        department = _extract_labeled_field(
+            text,
+            ["Department", "Business Unit", "Division", "Function"],
+        )
 
     posting_date = None
     date_match = re.search(r"(Posted|Posting Date|Date Posted)[:\s]*([A-Za-z0-9,\- ]{3,40})", text, re.IGNORECASE)
@@ -1125,6 +1281,30 @@ def scrape_company(page, source: Source, max_jobs: int) -> List[Dict]:
     company = source.company
 
     # ------------------------------------------------------------------
+    # Step 0 – The configured source URL may already be a job listing page
+    # ------------------------------------------------------------------
+    job_links: List[str] = []
+    source_jobs = _try_gather_jobs(page, company)
+    if source_jobs:
+        job_links = _finalize_job_links(page, source_jobs, company, max_jobs)
+        print(f"[{company}] Discovered {len(job_links)} job links on source URL")
+
+    if _has_enough_jobs(job_links, max_jobs):
+        print(f"[{company}] Total discovered: {len(job_links)} candidate job links")
+        jobs: List[Dict] = []
+        for index, link in enumerate(job_links[:max_jobs]):
+            try:
+                print(f"[{company}] Visiting [{index + 1}] {link}")
+                _goto_and_wait(page, link)
+                fields = extract_job_fields(page, source.company)
+                fields["apply_url"] = link
+                fields["source_url"] = source.url
+                jobs.append(fields)
+            except Exception as exc:
+                print(f"[{company}] Error visiting {link}: {exc}")
+        return jobs
+
+    # ------------------------------------------------------------------
     # Step 1 – Discover careers links from homepage
     # ------------------------------------------------------------------
     careers_candidates = find_careers_links(page)
@@ -1145,26 +1325,27 @@ def scrape_company(page, source: Source, max_jobs: int) -> List[Dict]:
     # ------------------------------------------------------------------
     # Step 2 – Try portal links discovered directly on the homepage
     # ------------------------------------------------------------------
-    job_links: List[str] = []
-
     for portal_url in all_portal_candidates[:2]:
+        if _has_enough_jobs(job_links, max_jobs):
+            break
         print(f"[{company}] Trying ATS portal from homepage: {portal_url}")
         try:
             _goto_and_wait(page, portal_url)
-            job_links = _try_gather_jobs(page, company)
-            if len(job_links) >= MIN_CONFIDENT_JOBS:
-                job_links = _follow_pagination(page, job_links, company, max_jobs)
+            portal_jobs = _try_gather_jobs(page, company)
+            if len(portal_jobs) >= MIN_CONFIDENT_JOBS:
+                portal_jobs = _finalize_job_links(page, portal_jobs, company, max_jobs)
+                if len(portal_jobs) > len(job_links):
+                    job_links = portal_jobs
                 print(f"[{company}] Discovered {len(job_links)} job links from direct portal")
-                break
-            elif job_links:
-                print(f"[{company}] Only {len(job_links)} link(s) from portal — trying others")
+            elif portal_jobs:
+                print(f"[{company}] Only {len(portal_jobs)} link(s) from portal — trying others")
         except Exception as exc:
             print(f"[{company}] Failed to load ATS portal {portal_url}: {exc}")
 
     # ------------------------------------------------------------------
     # Step 3 – Visit candidate careers pages and look for portals + jobs
     # ------------------------------------------------------------------
-    if not job_links:
+    if not _has_enough_jobs(job_links, max_jobs):
         for careers_url in careers_candidates[:3]:
             print(f"[{company}] Visiting careers page: {careers_url}")
             try:
@@ -1174,13 +1355,16 @@ def scrape_company(page, source: Source, max_jobs: int) -> List[Dict]:
                 continue
 
             # Check if the careers page itself lists jobs
-            job_links = _try_gather_jobs(page, company)
-            if len(job_links) >= MIN_CONFIDENT_JOBS:
-                job_links = _follow_pagination(page, job_links, company, max_jobs)
+            careers_jobs = _try_gather_jobs(page, company)
+            if len(careers_jobs) >= MIN_CONFIDENT_JOBS:
+                careers_jobs = _finalize_job_links(page, careers_jobs, company, max_jobs)
+                if len(careers_jobs) > len(job_links):
+                    job_links = careers_jobs
                 print(f"[{company}] Discovered {len(job_links)} job links on careers page")
-                break
-            elif job_links:
-                print(f"[{company}] Only {len(job_links)} link(s) on careers page — looking for portal")
+                if _has_enough_jobs(job_links, max_jobs):
+                    break
+            elif careers_jobs:
+                print(f"[{company}] Only {len(careers_jobs)} link(s) on careers page — looking for portal")
 
             # Look for portal links on the careers page
             portal_candidates = find_portal_links(page)
@@ -1191,17 +1375,20 @@ def scrape_company(page, source: Source, max_jobs: int) -> List[Dict]:
                 print(f"[{company}] Trying portal: {portal_url}")
                 try:
                     _goto_and_wait(page, portal_url)
-                    job_links = _try_gather_jobs(page, company)
-                    if len(job_links) >= MIN_CONFIDENT_JOBS:
-                        job_links = _follow_pagination(page, job_links, company, max_jobs)
+                    portal_jobs = _try_gather_jobs(page, company)
+                    if len(portal_jobs) >= MIN_CONFIDENT_JOBS:
+                        portal_jobs = _finalize_job_links(page, portal_jobs, company, max_jobs)
+                        if len(portal_jobs) > len(job_links):
+                            job_links = portal_jobs
                         print(f"[{company}] Discovered {len(job_links)} job links from portal")
-                        break
-                    elif job_links:
-                        print(f"[{company}] Only {len(job_links)} link(s) from portal — trying others")
+                        if _has_enough_jobs(job_links, max_jobs):
+                            break
+                    elif portal_jobs:
+                        print(f"[{company}] Only {len(portal_jobs)} link(s) from portal — trying others")
                 except Exception as exc:
                     print(f"[{company}] Failed to load portal {portal_url}: {exc}")
 
-            if job_links:
+            if _has_enough_jobs(job_links, max_jobs):
                 break
 
             # Depth-2: check sub-links on the careers page for a deeper portal
@@ -1212,11 +1399,14 @@ def scrape_company(page, source: Source, max_jobs: int) -> List[Dict]:
                 print(f"[{company}] Trying depth-2 sub-link: {sub_url}")
                 try:
                     _goto_and_wait(page, sub_url)
-                    job_links = _try_gather_jobs(page, company)
-                    if job_links:
-                        job_links = _follow_pagination(page, job_links, company, max_jobs)
+                    sub_jobs = _try_gather_jobs(page, company)
+                    if sub_jobs:
+                        sub_jobs = _finalize_job_links(page, sub_jobs, company, max_jobs)
+                        if len(sub_jobs) > len(job_links):
+                            job_links = sub_jobs
                         print(f"[{company}] Discovered {len(job_links)} job links at depth-2")
-                        break
+                        if _has_enough_jobs(job_links, max_jobs):
+                            break
 
                     # One more portal check
                     deep_portals = find_portal_links(page)
@@ -1224,26 +1414,29 @@ def scrape_company(page, source: Source, max_jobs: int) -> List[Dict]:
                         print(f"[{company}] Trying depth-2 portal: {dp_url}")
                         try:
                             _goto_and_wait(page, dp_url)
-                            job_links = _try_gather_jobs(page, company)
-                            if job_links:
-                                job_links = _follow_pagination(page, job_links, company, max_jobs)
+                            deep_jobs = _try_gather_jobs(page, company)
+                            if deep_jobs:
+                                deep_jobs = _finalize_job_links(page, deep_jobs, company, max_jobs)
+                                if len(deep_jobs) > len(job_links):
+                                    job_links = deep_jobs
                                 print(f"[{company}] Discovered {len(job_links)} job links at depth-2 portal")
-                                break
+                                if _has_enough_jobs(job_links, max_jobs):
+                                    break
                         except Exception as exc:
                             print(f"[{company}] Failed depth-2 portal {dp_url}: {exc}")
                 except Exception as exc:
                     print(f"[{company}] Failed depth-2 sub-link {sub_url}: {exc}")
 
-                if job_links:
+                if _has_enough_jobs(job_links, max_jobs):
                     break
 
-            if job_links:
+            if _has_enough_jobs(job_links, max_jobs):
                 break
 
     # ------------------------------------------------------------------
     # Step 4 – Try guessing the careers subdomain
     # ------------------------------------------------------------------
-    if len(job_links) < MIN_CONFIDENT_JOBS:
+    if not _has_enough_jobs(job_links, max_jobs):
         guessed_url = _guess_careers_subdomain(source.url)
         if guessed_url:
             print(f"[{company}] Trying guessed careers subdomain: {guessed_url}")
@@ -1273,7 +1466,7 @@ def scrape_company(page, source: Source, max_jobs: int) -> List[Dict]:
                                 _goto_and_wait(page, best_url)
                             except Exception:
                                 pass
-                    guessed_jobs = _follow_pagination(page, guessed_jobs, company, max_jobs)
+                    guessed_jobs = _finalize_job_links(page, guessed_jobs, company, max_jobs)
                     if len(guessed_jobs) > len(job_links):
                         job_links = guessed_jobs
                         print(f"[{company}] Discovered {len(job_links)} job links from careers subdomain")
