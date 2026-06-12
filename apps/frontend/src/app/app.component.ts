@@ -13,6 +13,9 @@ type IntakeDocument = {
   id: number; originalFilename: string; fileType: string;
   fileSize: number; extractedText: string | null;
   rowCount: number | null; status: string; createdAt: string;
+  parsedEmployeesCount: number | null;
+  parseError: string | null;
+  parsedAt: string | null;
 };
 type AtRiskSubmission = {
   id: number; employeeId: number; name: string;
@@ -64,21 +67,24 @@ export class AppComponent implements OnInit, AfterViewChecked {
   roleSearchLoading = false;
   isDragOver = false;
 
+  /** Per-document parse state: 'idle' | 'loading' | 'done' | 'error' */
+  parseStates: Map<number, 'idle' | 'loading' | 'done' | 'error'> = new Map();
+  parseResults: Map<number, { parsed: number; errors: string[] }> = new Map();
+
   readonly intakeCsvColumns: IntakeCsvColumn[] = [
-    { header: 'name', required: true, dataType: 'text', description: 'Employee full name', example: 'Ahmad Fadzillah' },
-    { header: 'age', required: false, dataType: 'integer', description: 'Employee age', example: '34' },
-    { header: 'gender', required: false, dataType: 'text', description: 'Gender', example: 'Female' },
-    { header: 'email', required: false, dataType: 'text', description: 'Work email', example: 'name@company.com' },
-    { header: 'phone', required: false, dataType: 'text', description: 'Contact number', example: '+60 12-345 6789' },
-    { header: 'department', required: false, dataType: 'text', description: 'Employee department', example: 'Engineering' },
-    { header: 'current_role_id', required: true, dataType: 'integer', description: 'Current role — must match occupations.id', example: '151252' },
-    { header: 'experience', required: false, dataType: 'integer', description: 'Years of experience', example: '5' },
-    { header: 'skills', required: true, dataType: 'text', description: 'Employee skills as comma-separated name:proficiency pairs (0–5)', example: 'Python:4, SQL:3.5' },
-    { header: 'departure_reason', required: true, dataType: 'text', description: 'Why reassignment is needed', example: 'Role restructuring' },
-    { header: 'submission_department', required: false, dataType: 'text', description: 'Department on reassignment record (optional; leave blank to use employee department)', example: 'Engineering' },
-    { header: 'performance', required: false, dataType: 'integer', description: 'Performance score', example: '82' },
-    { header: 'document_id', required: false, dataType: 'integer', description: 'Linked intake document ID', example: '1' },
+    { header: 'name',             required: true,  dataType: 'text',    description: 'Employee full name (aliases: full_name, employee_name)',                   example: 'Ahmad Fadzillah' },
+    { header: 'age',              required: false, dataType: 'integer', description: 'Employee age',                                                             example: '34' },
+    { header: 'gender',           required: false, dataType: 'text',    description: 'Gender',                                                                   example: 'Female' },
+    { header: 'email',            required: false, dataType: 'text',    description: 'Work email (aliases: email_address)',                                       example: 'name@company.com' },
+    { header: 'phone',            required: false, dataType: 'text',    description: 'Contact number (aliases: mobile, phone_number)',                            example: '+60 12-345 6789' },
+    { header: 'department',       required: false, dataType: 'text',    description: 'Employee department (aliases: dept)',                                       example: 'Engineering' },
+    { header: 'current_role',     required: true,  dataType: 'text',    description: 'Job title — matched to O*NET taxonomy automatically (aliases: role, position, job_title, title)', example: 'Software Developer' },
+    { header: 'experience',       required: false, dataType: 'integer', description: 'Years of experience (aliases: exp, years_of_experience)',                   example: '5' },
+    { header: 'skills',           required: true,  dataType: 'text',    description: 'Skills as comma-separated name:proficiency pairs 0–5 (aliases: skill_set)', example: 'Python:4, SQL:3.5' },
+    { header: 'departure_reason', required: true,  dataType: 'text',    description: 'Why reassignment is needed (aliases: reason, risk_reason)',                 example: 'Role restructuring' },
+    { header: 'performance',      required: false, dataType: 'integer', description: 'Performance score 0–100 (aliases: perf, rating)',                           example: '82' },
   ];
+
 
   // ── Local mock data (editable) ─────────────────────────────────────────────
   employees: Employee[] = [];
@@ -162,7 +168,10 @@ export class AppComponent implements OnInit, AfterViewChecked {
       void this.searchOccupations('');
     } catch (e) {
       this.intakeError = e instanceof Error ? e.message : 'Could not load intake data.';
-    } finally { this.intakeLoading = false; }
+    } finally {
+      this.intakeLoading = false;
+      this.cdr.detectChanges();
+    }
   }
 
   blankManualForm(): ManualForm {
@@ -183,6 +192,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
       this.occupations = [];
     } finally {
       this.roleSearchLoading = false;
+      this.cdr.detectChanges();
     }
   }
 
@@ -241,8 +251,44 @@ export class AppComponent implements OnInit, AfterViewChecked {
       const rowNote = rec.rowCount != null ? ` · ${rec.rowCount} employee row${rec.rowCount === 1 ? '' : 's'} detected` : '';
       this.uploadSuccess = `${rec.originalFilename} uploaded to server${rowNote}.`;
       this.selectedFile = null;
-    } catch (e) { this.uploadError = e instanceof Error ? e.message : 'Upload failed.'; }
-    finally { this.uploadLoading = false; }
+    } catch (e) {
+      this.uploadError = e instanceof Error ? e.message : 'Upload failed.';
+    } finally {
+      this.uploadLoading = false;
+      this.cdr.detectChanges();
+    }
+  }
+
+  async parseDocument(doc: IntakeDocument) {
+    this.parseStates.set(doc.id, 'loading');
+    this.parseResults.delete(doc.id);
+    try {
+      const result = await this.fetchJson<{ documentId: number; parsed: number; errors: string[] }>(
+        `/api/intake/documents/${doc.id}/parse`,
+        { method: 'POST' },
+      );
+      this.parseStates.set(doc.id, result.parsed > 0 ? 'done' : 'error');
+      this.parseResults.set(doc.id, result);
+      // Refresh document list so the card shows updated parsedEmployeesCount
+      const updated = await this.fetchJson<IntakeDocument>(`/api/intake/documents`);
+      // Update the specific document in place
+      const idx = this.documents.findIndex(d => d.id === doc.id);
+      const freshDocs = await this.fetchJson<IntakeDocument[]>('/api/intake/documents');
+      this.documents = freshDocs;
+    } catch (e) {
+      this.parseStates.set(doc.id, 'error');
+      this.parseResults.set(doc.id, { parsed: 0, errors: [e instanceof Error ? e.message : 'Parse failed'] });
+    } finally {
+      this.cdr.detectChanges();
+    }
+  }
+
+  parseStateOf(docId: number): 'idle' | 'loading' | 'done' | 'error' {
+    return this.parseStates.get(docId) ?? 'idle';
+  }
+
+  parseResultOf(docId: number): { parsed: number; errors: string[] } | null {
+    return this.parseResults.get(docId) ?? null;
   }
 
   async submitManualEmployee() {
@@ -287,8 +333,12 @@ export class AppComponent implements OnInit, AfterViewChecked {
       this.submissions = [rec, ...this.submissions];
       this.manualSuccess = `Saved details for ${rec.name}.`;
       this.resetManualForm();
-    } catch (e) { this.manualError = e instanceof Error ? e.message : 'Submission failed.'; }
-    finally { this.manualLoading = false; }
+    } catch (e) {
+      this.manualError = e instanceof Error ? e.message : 'Submission failed.';
+    } finally {
+      this.manualLoading = false;
+      this.cdr.detectChanges();
+    }
   }
 
   // ─── Employee CRUD ─────────────────────────────────────────────────────────
@@ -651,7 +701,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
 
   downloadCsvTemplate() {
     const escape = (v: string) => (v.includes(',') || v.includes('"') ? `"${v.replace(/"/g, '""')}"` : v);
-    const headers = this.intakeCsvColumns.map(c => c.header);
+    const headers = this.intakeCsvColumns.map(c => c.header.trim());
     const example = this.intakeCsvColumns.map(c => escape(c.example));
     const csv = [headers.join(','), example.join(',')].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -698,8 +748,9 @@ export class AppComponent implements OnInit, AfterViewChecked {
 
   intakeStatusTone(status: string): 'ok' | 'pending' | 'error' {
     const s = status.toLowerCase();
-    if (s.includes('fail') || s.includes('error')) return 'error';
+    if (s.includes('fail') || s.includes('error') || s === 'parse_failed') return 'error';
     if (s.includes('process') || s.includes('pending') || s.includes('queue')) return 'pending';
+    if (s === 'parsed') return 'ok';
     return 'ok';
   }
 

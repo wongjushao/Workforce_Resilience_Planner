@@ -1,0 +1,16 @@
+name,current_role,department,age,gender,email,phone,experience,skills,departure_reason,performance
+Rosnani binti Othman,Financial Analyst,Finance,37,Female,rosnani.othman@bigbank.my,+60 12-222 3333,12,"Financial Modelling:5,Excel:5,Power BI:4,Bloomberg:4.5,IFRS:4",AI Automation Risk,88
+Lee Hock Seng,Accountant,Finance,45,Male,hockseng.lee@bigbank.my,+60 13-333 4444,22,"Accounting:5,SAP:4.5,Excel:5,Tax Compliance:4,Auditing:4.5",AI Automation Risk,82
+Kavitha Pillai,Loan Officer,Finance,33,Female,kavitha.pillai@bigbank.my,+60 14-444 5555,9,"Credit Analysis:4.5,Risk Assessment:4,Customer Service:4,Financial Modelling:3.5,Excel:4",AI Automation Risk,79
+Mohd Zulkarnain bin Hamid,Branch Manager,Finance,48,Male,zulkarnain.hamid@bigbank.my,+60 15-555 6666,25,"Leadership:5,Customer Service:4.5,Banking Operations:5,Compliance:4,Staff Management:4.5",Role Restructuring,91
+Serena Wong Hui Ling,Risk Analyst,Finance,30,Female,serena.wong@bigbank.my,+60 16-666 7777,6,"Risk Modelling:4,SQL:3.5,Python:3,Excel:4.5,Basel III:4",AI Automation Risk,85
+Faiz Izzuddin bin Kadir,Teller,Finance,24,Male,faiz.izzuddin@bigbank.my,+60 17-777 8888,2,"Cash Handling:4,Customer Service:4.5,Banking Software:3.5,MS Office:3,Data Entry:4",AI Automation Risk,70
+Norhayati binti Saad,Compliance Officer,Finance,40,Female,norhayati.saad@bigbank.my,+60 18-888 9999,17,"Regulatory Compliance:5,AML:5,KYC:5,Policy Writing:4,Risk Assessment:4.5",Redundancy,87
+Gary Chew Boon Huat,Investment Analyst,Finance,35,Male,gary.chew@bigbank.my,+60 19-999 0000,10,"CFA:5,Portfolio Management:4.5,Bloomberg:5,Equity Research:4.5,Python:3.5",Budget Cuts,90
+Aida Zuraina binti Zainal,HR Business Partner,HR,38,Female,aida.zuraina@bigbank.my,+60 12-111 2222,14,"Talent Management:4.5,HR Analytics:4,Employee Relations:5,HRIS:4,Recruitment:4.5",Redundancy,83
+Syamsul Bahri bin Yusoff,Operations Manager,Operations,50,Male,syamsul.yusoff@bigbank.my,+60 13-222 3333,27,"Process Improvement:5,Six Sigma:4.5,Banking Operations:5,Leadership:4.5,ERP:4",Role Restructuring,89
+Loo Pei Sze,Data Entry Clerk,Operations,23,Female,peisze.loo@bigbank.my,+60 14-333 4444,1,"MS Office:3.5,Data Entry:4,Customer Service:3,Excel:3.5,Accuracy:4",AI Automation Risk,65
+Raveendran Nair,ATM Technician,Operations,36,Male,raveendran.nair@bigbank.my,+60 15-444 5555,11,"Hardware Maintenance:4.5,Networking:4,ATM Operations:5,Troubleshooting:4.5,Electronics:4",Role Restructuring,80
+Sazlinda binti Salim,Customer Service Representative,Operations,27,Female,sazlinda.salim@bigbank.my,+60 16-555 6666,3,"Customer Service:4.5,Communication:4,Problem Solving:4,Banking Software:3.5,MS Office:3.5",AI Automation Risk,73
+Benedict Tan Keng Soon,Treasury Analyst,Finance,32,Male,benedict.tan@bigbank.my,+60 17-666 7777,8,"FX Trading:4,Bloomberg:4.5,Risk Management:4,Excel:5,Financial Markets:4.5",Budget Cuts,86
+Nur Hidayah binti Rashid,Mortgage Specialist,Finance,29,Female,hidayah.rashid@bigbank.my,+60 18-777 8888,5,"Mortgage Processing:4.5,Credit Assessment:4,Customer Service:4.5,Legal Documentation:3.5,Excel:4",AI Automation Risk,77

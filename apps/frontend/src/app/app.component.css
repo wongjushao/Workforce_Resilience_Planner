@@ -1284,3 +1284,104 @@
   margin-right: 4px;
 }
 .home-link:hover { color: #94a3b8; }
+
+/* ─── Intake Document Parse Actions ─────────────────────────────────────── */
+.intake-doc-actions {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(148,163,184,0.08);
+}
+
+.parse-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(59,130,246,0.3);
+  background: rgba(59,130,246,0.08);
+  color: #60a5fa;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  width: 100%;
+  justify-content: center;
+}
+.parse-btn:hover:not([disabled]) {
+  background: rgba(59,130,246,0.15);
+  border-color: rgba(59,130,246,0.5);
+}
+.parse-btn[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.parse-btn-done {
+  border-color: rgba(34,197,94,0.3);
+  background: rgba(34,197,94,0.08);
+  color: #4ade80;
+}
+.parse-btn-done:hover:not([disabled]) {
+  background: rgba(34,197,94,0.15);
+}
+.parse-btn-error {
+  border-color: rgba(239,68,68,0.3);
+  background: rgba(239,68,68,0.08);
+  color: #f87171;
+}
+.parse-btn-error:hover:not([disabled]) {
+  background: rgba(239,68,68,0.15);
+}
+
+/* Spinner for loading state */
+.parse-spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(96,165,250,0.3);
+  border-top-color: #60a5fa;
+  border-radius: 50%;
+  animation: parseSpin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes parseSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* Parsed employees badge (green) */
+.parsed-badge {
+  background: rgba(34,197,94,0.12) !important;
+  color: #4ade80 !important;
+}
+.parsed-date {
+  color: #4ade80 !important;
+  font-size: 0.7rem !important;
+}
+
+/* Parse result feedback block */
+.parse-result-block {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(2,8,23,0.4);
+  border: 1px solid rgba(148,163,184,0.1);
+}
+.parse-ok {
+  margin: 0;
+  font-size: 0.76rem;
+  color: #4ade80;
+  font-weight: 600;
+}
+.parse-none {
+  margin: 0;
+  font-size: 0.76rem;
+  color: #f87171;
+}
+.parse-errors {
+  margin: 6px 0 0;
+  padding-left: 16px;
+  font-size: 0.72rem;
+  color: #f59e0b;
+  line-height: 1.55;
+}
+.parse-errors li + li { margin-top: 3px; }

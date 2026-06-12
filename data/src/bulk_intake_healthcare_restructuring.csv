@@ -1,0 +1,11 @@
+name,current_role,department,age,gender,email,phone,experience,skills,departure_reason,performance
+Zulaikha binti Ismail,Registered Nurse,Clinical,30,Female,zulaikha.ismail@khospital.my,+60 12-100 2001,6,"Patient Care:5,Clinical Assessment:4.5,Medication Administration:4.5,EMR:4,First Aid:5",Role Restructuring,86
+Dr. Arun Prakash Menon,General Practitioner,Clinical,40,Male,arun.menon@khospital.my,+60 13-200 3002,14,"Diagnosis:5,Clinical Examination:5,Patient Communication:4.5,Medical Records:4,EHR:4",Budget Cuts,92
+Halimah binti Dolah,Medical Laboratory Technician,Pathology,33,Female,halimah.dolah@khospital.my,+60 14-300 4003,8,"Lab Analysis:5,Specimen Handling:5,Quality Control:4,LIS:4,Microscopy:4.5",AI Automation Risk,84
+Reuben Joseph Fernandez,Radiographer,Radiology,36,Male,reuben.fernandez@khospital.my,+60 15-400 5004,11,"CT Scanning:4.5,MRI:4,X-Ray:5,PACS:4,Patient Positioning:5",AI Automation Risk,88
+Ng Siew Fang,Pharmacist,Pharmacy,34,Female,siewfang.ng@khospital.my,+60 16-500 6005,9,"Dispensing:5,Drug Interactions:5,Patient Counselling:4.5,Inventory Management:4,Compounding:4",AI Automation Risk,87
+Khairul Anwar bin Zainol,Hospital Administrator,Administration,43,Male,khairul.zainol@khospital.my,+60 17-600 7006,19,"Healthcare Administration:5,Budgeting:4.5,Staff Management:4.5,Compliance:4,HIS:4",Redundancy,85
+Sumathi d/o Rajasegaran,Physiotherapist,Rehabilitation,28,Female,sumathi.raja@khospital.my,+60 18-700 8007,4,"Physiotherapy:5,Rehabilitation:5,Patient Assessment:4.5,Exercise Therapy:5,EMR:3.5",Contract Ending,79
+Mohd Izzat bin Hamzah,Medical Coder,Health Informatics,31,Male,izzat.hamzah@khospital.my,+60 19-800 9008,7,"ICD-10:5,Medical Coding:5,HIM:4.5,Anatomy:4,Insurance Claims:4",AI Automation Risk,81
+Christine Loh Bee Yan,Patient Services Coordinator,Administration,26,Female,christine.loh@khospital.my,+60 12-900 0009,2,"Customer Service:4,Scheduling:4,Medical Terminology:3.5,Communication:4.5,MS Office:4",AI Automation Risk,72
+Dr. Hazwani binti Zulkifli,Psychiatrist,Psychiatry,38,Female,hazwani.zulkifli@khospital.my,+60 13-010 1010,13,"Mental Health Assessment:5,CBT:5,Patient Communication:5,Documentation:4.5,Crisis Intervention:5",Budget Cuts,94

@@ -1,0 +1,21 @@
+name,current_role,department,age,gender,email,phone,experience,skills,departure_reason,performance
+Ahmad Fadzillah bin Rosli,Software Developer,Engineering,34,Male,ahmad.fadzillah@techcorp.my,+60 12-345 6789,8,"Python:4.5,SQL:3.5,Docker:3,Git:4,React:3",Role Restructuring,82
+Siti Norzahirah binti Hassan,Data Analyst,Analytics,29,Female,siti.norzahirah@techcorp.my,+60 11-234 5678,5,"SQL:5,Excel:4,Tableau:3.5,Power BI:4,Python:3",AI Automation Risk,78
+James Tan Wei Xiang,DevOps Engineer,Infrastructure,38,Male,james.tan@techcorp.my,+60 16-789 0123,12,"Kubernetes:4.5,AWS:4,Python:3.5,Terraform:4,Linux:5",Budget Cuts,91
+Nurul Ain binti Zulkifli,UX Designer,Product,26,Female,nurul.ain@techcorp.my,+60 17-456 7890,3,"Figma:4.5,Adobe XD:4,CSS:3,User Research:4,Prototyping:4.5",Role Restructuring,74
+Rajesh Kumar Naidu,Backend Developer,Engineering,31,Male,rajesh.kumar@techcorp.my,+60 13-567 8901,7,"Java:4.5,Spring Boot:4,SQL:3.5,AWS:3,Microservices:4",AI Automation Risk,85
+Mei Ling Tan,Business Analyst,Strategy,35,Female,mei.ling@techcorp.my,+60 14-678 9012,10,"Requirements Gathering:5,JIRA:4,SQL:3,Stakeholder Management:4.5,Excel:4",Redundancy,79
+Mohammad Haziq bin Kamaruddin,Network Engineer,Infrastructure,42,Male,haziq.kamaruddin@techcorp.my,+60 19-890 1234,18,"Cisco:5,Network Security:4.5,CCNA:5,Firewall:4,VPN:4.5",Role Restructuring,88
+Priya Devi Subramaniam,Quality Assurance Engineer,Engineering,28,Female,priya.devi@techcorp.my,+60 12-901 2345,4,"Test Automation:4,Selenium:3.5,JIRA:4,SQL:3,Python:3",AI Automation Risk,72
+Lim Chee Keong,Frontend Developer,Engineering,33,Male,chee.keong@techcorp.my,+60 16-012 3456,9,"React:5,TypeScript:4.5,CSS:4,Node.js:3.5,Git:4.5",Contract Ending,87
+Farah Natasha binti Idris,Product Manager,Product,36,Female,farah.natasha@techcorp.my,+60 11-123 4567,11,"Agile:5,Roadmapping:4.5,Stakeholder Management:4,SQL:3,Excel:4",Redundancy,80
+Vijay Anand Krishnan,Cloud Architect,Infrastructure,44,Male,vijay.anand@techcorp.my,+60 17-234 5678,20,"AWS:5,Azure:4.5,GCP:4,Kubernetes:4.5,Terraform:5",Budget Cuts,93
+Wan Nur Syahirah binti Wan Ahmad,Data Engineer,Analytics,27,Female,syahirah.wan@techcorp.my,+60 18-345 6789,3,"Python:4,Apache Spark:3.5,SQL:4,Airflow:3,BigQuery:3.5",AI Automation Risk,76
+Daniel Ong Kah Wai,Mobile Developer,Engineering,30,Male,daniel.ong@techcorp.my,+60 14-456 7890,6,"Flutter:4.5,Dart:4,iOS:3.5,Android:3.5,Firebase:4",Role Restructuring,81
+Aisyah binti Abdul Rahman,Cybersecurity Analyst,Security,32,Female,aisyah.ar@techcorp.my,+60 13-567 8901,8,"Penetration Testing:4,SIEM:4.5,Network Security:4,Python:3.5,Incident Response:4",Budget Cuts,89
+Kuan Yew Loh,Database Administrator,Engineering,39,Male,kuanyew.loh@techcorp.my,+60 19-678 9012,15,"SQL Server:5,Oracle:4.5,MySQL:4,Performance Tuning:5,Backup Recovery:4.5",AI Automation Risk,84
+Nabilah binti Mohd Noor,Scrum Master,Delivery,31,Female,nabilah.noor@techcorp.my,+60 12-789 0123,7,"Scrum:5,JIRA:4.5,Agile:5,Stakeholder Management:4,Confluence:4",Redundancy,77
+Chong Wen Xin,Machine Learning Engineer,Analytics,29,Female,wenxin.chong@techcorp.my,+60 16-890 1234,4,"Python:5,TensorFlow:4,PyTorch:3.5,SQL:3.5,scikit-learn:4.5",AI Automation Risk,83
+Hafizuddin bin Mansor,Systems Administrator,Infrastructure,40,Male,hafizuddin.mansor@techcorp.my,+60 11-901 2345,16,"Linux:5,Windows Server:4.5,PowerShell:4,Active Directory:5,VMware:4",Role Restructuring,86
+Tan Su Ling,Technical Writer,Product,34,Female,suling.tan@techcorp.my,+60 17-012 3456,9,"Technical Writing:5,Markdown:4,Confluence:4.5,API Documentation:4,Editing:5",AI Automation Risk,75
+Muhammad Amirul bin Zainudin,Software Tester,Engineering,25,Male,amirul.zainudin@techcorp.my,+60 18-123 4567,1,"Manual Testing:3.5,JIRA:3,SQL:2.5,Test Cases:3.5,API Testing:3",Contract Ending,68

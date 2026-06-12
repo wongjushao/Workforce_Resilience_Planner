@@ -148,7 +148,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--max-jobs",
         type=int,
-        default=100,
+        default=5,
         help="Maximum jobs to collect per company (default: 100)",
     )
     parser.add_argument(

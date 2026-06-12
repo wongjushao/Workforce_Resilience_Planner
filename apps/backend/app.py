@@ -52,6 +52,22 @@ def list_intake_documents():
     return jsonify(intake.list_document_uploads())
 
 
+@app.post("/api/intake/documents/<int:document_id>/parse")
+def parse_intake_document(document_id: int):
+    """
+    Trigger employee extraction from a stored intake document.
+    Reads the file on disk, parses employee rows (CSV) or text blocks
+    (PDF/DOCX), and writes records to employees + at_risk_submissions.
+    """
+    try:
+        result = intake.parse_document_employees(document_id)
+        return jsonify(result), 200
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
+    except Exception as error:  # noqa: BLE001
+        return jsonify({"error": f"Parse failed: {error}"}), 500
+
+
 @app.post("/api/intake/employees")
 def submit_at_risk_employee():
     payload = request.get_json(silent=True) or {}

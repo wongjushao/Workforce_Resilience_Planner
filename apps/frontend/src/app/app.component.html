@@ -405,11 +405,56 @@
               <span class="type-pill" [class.type-csv]="d.fileType === 'csv'">{{ d.fileType | uppercase }}</span>
               <span>{{ formatFileSize(d.fileSize) }}</span>
               <span *ngIf="d.rowCount != null" class="intake-row-badge">{{ d.rowCount }} employee{{ d.rowCount === 1 ? '' : 's' }}</span>
+              <span *ngIf="d.parsedEmployeesCount != null" class="intake-row-badge parsed-badge">
+                ✓ {{ d.parsedEmployeesCount }} imported
+              </span>
             </div>
             <p class="intake-doc-date">Uploaded {{ formatIntakeDate(d.createdAt) }}</p>
+            <p *ngIf="d.parsedAt" class="intake-doc-date parsed-date">Parsed {{ formatIntakeDate(d.parsedAt) }}</p>
             <pre *ngIf="d.extractedText" class="preview intake-doc-preview">{{ d.extractedText }}</pre>
+
+            <!-- Parse result feedback -->
+            <div *ngIf="parseResultOf(d.id) as res" class="parse-result-block">
+              <p *ngIf="res.parsed > 0" class="parse-ok">
+                ✓ {{ res.parsed }} employee{{ res.parsed === 1 ? '' : 's' }} imported to Employees register
+              </p>
+              <p *ngIf="res.parsed === 0" class="parse-none">
+                No employee records could be extracted — check file format or column headers.
+              </p>
+              <ul *ngIf="res.errors.length" class="parse-errors">
+                <li *ngFor="let err of res.errors">{{ err }}</li>
+              </ul>
+            </div>
+
+            <!-- Parse action button -->
+            <div class="intake-doc-actions">
+              <button
+                type="button"
+                class="btn-sm parse-btn"
+                [class.parse-btn-done]="parseStateOf(d.id) === 'done'"
+                [class.parse-btn-error]="parseStateOf(d.id) === 'error'"
+                [disabled]="parseStateOf(d.id) === 'loading'"
+                (click)="parseDocument(d)"
+                [title]="d.fileType === 'doc' ? 'Legacy .doc files cannot be parsed automatically' : 'Extract employee records from this file'"
+              >
+                <ng-container *ngIf="parseStateOf(d.id) === 'loading'">
+                  <span class="parse-spinner" aria-hidden="true"></span> Parsing…
+                </ng-container>
+                <ng-container *ngIf="parseStateOf(d.id) === 'idle'">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+                    <path d="M19 8v6M22 11h-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                  Parse Employees
+                </ng-container>
+                <ng-container *ngIf="parseStateOf(d.id) === 'done'">✓ Re-parse</ng-container>
+                <ng-container *ngIf="parseStateOf(d.id) === 'error'">&#9888; Retry Parse</ng-container>
+              </button>
+            </div>
           </article>
         </div>
+
       </div>
     </div>
 
