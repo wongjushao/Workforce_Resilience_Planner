@@ -16,7 +16,8 @@ import { SiteLayoutComponent } from '../site-layout.component';
             <h1 class="hero-h1">Your workforce is changing faster than your org chart.</h1>
             <p class="hero-sub">TalentPivot helps your team adapt to change. Spot roles at risk, map out real employee skills, and guide people toward new roles or training before they look elsewhere.</p>
             <div class="hero-cta-row">
-              <a class="btn-primary px-6" routerLink="/how-to-use">How to use?</a>
+              <a class="btn-primary px-6" routerLink="/signup">Get started free</a>
+              <a class="btn-secondary" routerLink="/how-to-use">How it works</a>
             </div>
           </div>
           <div class="hero-signal-card glass tilt-card reveal">

@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { BodyClassService } from '../services/body-class.service';
+import { AuthService } from '../services/auth.service';
 
 @Component({
   selector: 'app-site-layout',
@@ -22,24 +23,36 @@ import { BodyClassService } from '../services/body-class.service';
         </a>
         <div class="header-actions">
           <a class="btn-header-cta" routerLink="/how-to-use">How to use?</a>
-          <div class="user-menu">
+
+          <!-- Guest nav: not logged in -->
+          <ng-container *ngIf="!auth.isLoggedIn()">
+            <a class="btn-nav-login" routerLink="/login">Log in</a>
+            <a class="btn-nav-signup" routerLink="/signup">Sign up free</a>
+          </ng-container>
+
+          <!-- Auth nav: logged in -->
+          <div *ngIf="auth.isLoggedIn()" class="user-menu">
             <button
               class="user-trigger"
               type="button"
               aria-label="Open account menu"
               aria-haspopup="true"
             >
-              <span class="user-avatar" aria-hidden="true">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <path d="M20 21a8 8 0 0 0-16 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                  <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/>
-                </svg>
-              </span>
+              <span class="user-avatar-initials" aria-hidden="true">{{ userInitials() }}</span>
               <svg class="user-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </button>
             <div class="user-dropdown" role="menu">
+              <!-- User info -->
+              <div class="user-dropdown-profile">
+                <div class="user-dropdown-avatar">{{ userInitials() }}</div>
+                <div class="user-dropdown-info">
+                  <span class="user-dropdown-name">{{ auth.user()?.name }}</span>
+                  <span class="user-dropdown-email">{{ auth.user()?.email }}</span>
+                </div>
+              </div>
+              <div class="user-dropdown-divider"></div>
               <p class="user-dropdown-eyebrow">Workspace</p>
               <a class="user-dropdown-item" routerLink="/app" role="menuitem">
                 <span class="user-dropdown-icon" aria-hidden="true">
@@ -54,6 +67,14 @@ import { BodyClassService } from '../services/body-class.service';
                   <span class="user-dropdown-sub">Open the dashboard</span>
                 </span>
               </a>
+              <div class="user-dropdown-divider"></div>
+              <button class="user-dropdown-signout" role="menuitem" (click)="auth.logout()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Sign out
+              </button>
             </div>
           </div>
         </div>
@@ -122,6 +143,55 @@ import { BodyClassService } from '../services/body-class.service';
       box-shadow: 0 0 20px rgba(0,242,255,0.28); transition: transform 180ms ease, box-shadow 180ms ease;
     }
     .btn-header-cta:hover { transform: translateY(-2px); box-shadow: 0 0 24px rgba(0,242,255,0.48); }
+    .btn-nav-login {
+      display: inline-flex; align-items: center; justify-content: center;
+      height: 2.25rem; min-height: 2.25rem; padding: 0 1rem; border-radius: 999px;
+      background: transparent; color: #cbd5e1; border: 1px solid rgba(255,255,255,0.16);
+      font-size: 0.875rem; font-weight: 700; line-height: 1;
+      text-decoration: none; white-space: nowrap; flex-shrink: 0;
+      transition: border-color 180ms ease, color 180ms ease;
+    }
+    .btn-nav-login:hover { border-color: rgba(0,242,255,0.45); color: #fff; }
+    .btn-nav-signup {
+      display: inline-flex; align-items: center; justify-content: center;
+      height: 2.25rem; min-height: 2.25rem; padding: 0 1.1rem; border-radius: 999px;
+      background: #00f2ff; color: #031018; border: none;
+      font-size: 0.875rem; font-weight: 900; line-height: 1;
+      text-decoration: none; white-space: nowrap; flex-shrink: 0;
+      box-shadow: 0 0 18px rgba(0,242,255,0.38);
+      transition: transform 180ms ease, box-shadow 180ms ease;
+    }
+    .btn-nav-signup:hover { transform: translateY(-2px); box-shadow: 0 0 26px rgba(0,242,255,0.58); }
+    .user-avatar-initials {
+      display: inline-grid; place-items: center;
+      width: 1.75rem; height: 1.75rem; border-radius: 50%;
+      background: linear-gradient(135deg, rgba(0,242,255,0.3), rgba(112,0,255,0.38));
+      color: #fff; font-size: 0.7rem; font-weight: 900; flex-shrink: 0;
+    }
+    .user-dropdown-profile {
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0.65rem 0.55rem 0.75rem;
+    }
+    .user-dropdown-avatar {
+      width: 2.25rem; height: 2.25rem; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, rgba(0,242,255,0.25), rgba(112,0,255,0.35));
+      border: 1.5px solid rgba(0,242,255,0.25);
+      display: grid; place-items: center;
+      font-size: 0.78rem; font-weight: 900; color: #00f2ff;
+    }
+    .user-dropdown-info { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+    .user-dropdown-name { font-size: 0.875rem; font-weight: 800; color: #f8fbff; }
+    .user-dropdown-email { font-size: 0.75rem; color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .user-dropdown-divider { height: 1px; background: rgba(255,255,255,0.07); margin: 0.35rem 0; }
+    .user-dropdown-signout {
+      display: flex; align-items: center; gap: 0.65rem;
+      width: 100%; padding: 0.65rem 0.75rem; margin-top: 0.1rem;
+      border-radius: 12px; background: none; border: none;
+      color: #f87171; font-size: 0.875rem; font-weight: 700; font-family: inherit;
+      cursor: pointer; text-align: left;
+      transition: background 180ms ease;
+    }
+    .user-dropdown-signout:hover { background: rgba(248,113,113,0.1); }
     .user-menu {
       position: relative;
       display: inline-flex;
@@ -288,12 +358,14 @@ import { BodyClassService } from '../services/body-class.service';
 
     @media (max-width: 767px) {
       .site-header { top: 12px; padding: 0 12px; }
-      .nav-pill { gap: 0.75rem; padding: 10px 10px 10px 14px; }
+      .nav-pill { gap: 0.5rem; padding: 10px 10px 10px 14px; }
       .brand-mark { font-size: 1.18rem; }
       .brand-icon { width: 1.85rem; height: 1.85rem; }
-      .btn-header-cta { height: 2.2rem; min-height: 2.2rem; padding: 0 0.85rem; font-size: 0.8rem; }
+      .btn-header-cta { display: none; }
+      .btn-nav-login { height: 2.1rem; min-height: 2.1rem; padding: 0 0.75rem; font-size: 0.8rem; }
+      .btn-nav-signup { height: 2.1rem; min-height: 2.1rem; padding: 0 0.85rem; font-size: 0.8rem; }
       .user-trigger { height: 2.2rem; padding: 0 0.5rem 0 0.3rem; }
-      .user-avatar { width: 1.55rem; height: 1.55rem; }
+      .user-avatar-initials { width: 1.55rem; height: 1.55rem; font-size: 0.65rem; }
       .user-dropdown { width: 14.5rem; }
       .footer-links { justify-content: flex-start; }
       .footer-panel { padding: 1.35rem; }
@@ -301,6 +373,14 @@ import { BodyClassService } from '../services/body-class.service';
   `]
 })
 export class SiteLayoutComponent implements OnInit {
-  constructor(private bodyClass: BodyClassService) {}
+  userInitials = computed(() => {
+    const name = this.auth.user()?.name ?? '';
+    const parts = name.trim().split(' ').filter(Boolean);
+    if (parts.length === 0) return '?';
+    if (parts.length === 1) return parts[0][0].toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  });
+
+  constructor(private bodyClass: BodyClassService, public auth: AuthService) {}
   ngOnInit() { this.bodyClass.setMarketing(); }
 }

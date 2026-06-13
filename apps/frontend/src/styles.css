@@ -44,13 +44,45 @@ body.marketing-bg h3 {
 
 /* ─── Dashboard background (active on /app) ──────────────────────────────── */
 body.dashboard-bg {
-  background: #020817;
   color: #e2e8f0;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(0, 200, 220, 0.06), transparent 30rem),
+    radial-gradient(circle at 100% 80%, rgba(112, 0, 255, 0.07), transparent 35rem),
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    #020817;
+  background-size: auto, auto, 40px 40px, 40px 40px, auto;
 }
 
 /* ─── Shared scrollbar ───────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.18); border-radius: 3px; }
+
+/* ─── Browser autofill dark-mode override ────────────────────────────────── */
+/* Overrides the white autofill background Chrome/Edge/Safari injects.        */
+/* The large inset box-shadow paints over the UA-controlled background color. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 9999px rgba(2, 10, 22, 0.99) inset !important;
+  -webkit-text-fill-color: #e8f0fe !important;
+  caret-color: #e8f0fe;
+  transition: background-color 86400s ease-in-out 0s !important;
+}
+
+/* Slightly different shade for dashboard inputs */
+body.dashboard-bg input:-webkit-autofill,
+body.dashboard-bg input:-webkit-autofill:hover,
+body.dashboard-bg input:-webkit-autofill:focus,
+body.dashboard-bg textarea:-webkit-autofill,
+body.dashboard-bg select:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.99) inset !important;
+  -webkit-text-fill-color: #e2e8f0 !important;
+  caret-color: #e2e8f0;
+}
 
 /* ─── Cabinet Grotesk + Satoshi loaded via index.html <link> ─────────────── */
