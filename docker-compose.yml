@@ -1,5 +1,6 @@
 services:
   etl-pipeline:
+    profiles: ["setup"]
     build:
       context: .
       dockerfile: scripts/Dockerfile
@@ -11,6 +12,7 @@ services:
     command: ["--headless", "--out", "/app/data/src/jobs.json", "--stdout"]
 
   db-setup:
+    profiles: ["setup"]
     build:
       context: .
       dockerfile: apps/backend/Dockerfile
@@ -27,6 +29,7 @@ services:
     command: python -m db.ingest --classify
 
   job-load:
+    profiles: ["setup"]
     build:
       context: .
       dockerfile: apps/backend/Dockerfile
@@ -57,9 +60,6 @@ services:
       - ./:/app
     ports:
       - "5000:5000"
-    depends_on:
-      job-load:
-        condition: service_completed_successfully
 
   frontend:
     build:

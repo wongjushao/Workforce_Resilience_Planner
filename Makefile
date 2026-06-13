@@ -1,14 +1,15 @@
 # Makefile for Workforce Resilience Planner
 # Usage: make <target>
 
-.PHONY: up down restart build logs status clean fclean db-shell backend-shell frontend-shell help
+.PHONY: up setup down restart build logs status clean fclean db-shell backend-shell frontend-shell help
 
 # Default target
 help:
 	@echo "Available targets:"
-	@echo "  up          - Start all services (daemon mode)"
+	@echo "  up          - Start backend and frontend (preserves existing database)"
+	@echo "  setup       - One-time DB init: scrape jobs, ingest O*NET data, load vacancies"
 	@echo "  down        - Stop all services"
-	@echo "  restart     - Restart all services"
+	@echo "  restart     - Restart backend and frontend"
 	@echo "  build       - Rebuild images without starting"
 	@echo "  logs        - Tail logs from all services"
 	@echo "  status      - Show container status"
@@ -19,14 +20,17 @@ help:
 	@echo "  frontend-shell - Open sh inside frontend container"
 
 up:
-	docker compose up -d
+	docker compose up -d backend frontend
+
+setup:
+	docker compose --profile setup up --build etl-pipeline db-setup job-load
 
 down:
-	docker compose down
+	docker compose --profile setup down
 
 restart:
-	docker compose down -v
-	docker compose up --build
+	docker compose down
+	docker compose up -d --build backend frontend
 
 build:
 	docker compose build
