@@ -116,6 +116,13 @@ export function isSameDomain(a: string, b: string): boolean {
   return SAME_DOMAIN_GROUPS.some(g => g.includes(a) && g.includes(b));
 }
 
+/** @deprecated Use isSameDomain — kept for legacy component imports */
+export const isSameField = isSameDomain;
+/** @deprecated Use getDomain */
+export const getRoleDomain = getDomain;
+/** @deprecated Use getAxes */
+export const getSkillAxes = getAxes;
+
 export function getDomain(role: string): SkillDomain {
   return ROLE_DOMAIN[role] ?? 'it';
 }

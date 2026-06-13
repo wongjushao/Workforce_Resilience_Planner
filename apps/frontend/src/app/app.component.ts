@@ -7,20 +7,13 @@ import {
 } from './mock-data';
 import { RouterModule } from '@angular/router';
 import { BodyClassService } from './services/body-class.service';
+import {
+  PrototypeDataService,
+  IntakeDocument,
+  AtRiskSubmission,
+  Occupation,
+} from './services/prototype-data.service';
 
-// ─── API types (from existing backend) ───────────────────────────────────────
-type IntakeDocument = {
-  id: number; originalFilename: string; fileType: string;
-  fileSize: number; extractedText: string | null;
-  rowCount: number | null; status: string; createdAt: string;
-};
-type AtRiskSubmission = {
-  id: number; employeeId: number; name: string;
-  currentRole: string | null; department: string | null;
-  performance: number | null; documentId: number | null;
-  departureReason: string; source: string; createdAt: string;
-};
-type Occupation = { id: number; title: string };
 type ManualSkillRow = { name: string; proficiency: number };
 type ManualForm = {
   name: string; age: string; gender: string; email: string; phone: string;
@@ -77,7 +70,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
     { header: 'departure_reason', required: true, dataType: 'text', description: 'Why reassignment is needed', example: 'Role restructuring' },
     { header: 'submission_department', required: false, dataType: 'text', description: 'Department on reassignment record (optional; leave blank to use employee department)', example: 'Engineering' },
     { header: 'performance', required: false, dataType: 'integer', description: 'Performance score', example: '82' },
-    { header: 'document_id', required: false, dataType: 'integer', description: 'Linked intake document ID', example: '1' },
+    // { header: 'document_id', required: false, dataType: 'integer', description: 'Linked intake document ID', example: '1' },
   ];
 
   // ── Local mock data (editable) ─────────────────────────────────────────────
@@ -116,7 +109,11 @@ export class AppComponent implements OnInit, AfterViewChecked {
   @ViewChild('radarRight')   radarRightRef?:   ElementRef<HTMLCanvasElement>;
   private pendingRadarDraw = false;
 
-  constructor(private cdr: ChangeDetectorRef, private bodyClass: BodyClassService) {}
+  constructor(
+    private cdr: ChangeDetectorRef,
+    private bodyClass: BodyClassService,
+    private prototype: PrototypeDataService,
+  ) {}
 
 
   ngOnInit() {
@@ -125,7 +122,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
     this.vacancies = JSON.parse(JSON.stringify(MOCK_VACANCIES));
     this.nextEmpId = Math.max(...this.employees.map(e => e.id)) + 1;
     this.nextVacId = Math.max(...this.vacancies.map(v => v.id)) + 1;
-    void this.loadIntakeData();
+    this.loadIntakeData();
   }
 
   ngAfterViewChecked() {
@@ -135,34 +132,18 @@ export class AppComponent implements OnInit, AfterViewChecked {
     }
   }
 
-  // ─── API helpers ──────────────────────────────────────────────────────────
-  private readonly TIMEOUT = 10_000;
-  private async fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
-    const ctrl = new AbortController();
-    const tid = window.setTimeout(() => ctrl.abort(), this.TIMEOUT);
+  loadIntakeData() {
+    this.intakeLoading = true;
+    this.intakeError = '';
     try {
-      const res = await fetch(path, { ...init, signal: ctrl.signal });
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(typeof body.error === 'string' ? body.error : `HTTP ${res.status}`);
-      return body as T;
-    } catch (e) {
-      if (e instanceof DOMException && e.name === 'AbortError') throw new Error(`Timed out: ${path}`);
-      throw e;
-    } finally { window.clearTimeout(tid); }
-  }
-
-  async loadIntakeData() {
-    this.intakeLoading = true; this.intakeError = '';
-    try {
-      const [docs, subs] = await Promise.all([
-        this.fetchJson<IntakeDocument[]>('/api/intake/documents'),
-        this.fetchJson<AtRiskSubmission[]>('/api/intake/employees'),
-      ]);
-      this.documents = docs; this.submissions = subs;
-      void this.searchOccupations('');
+      this.documents = this.prototype.listDocuments();
+      this.submissions = this.prototype.listSubmissions();
+      this.searchOccupations('');
     } catch (e) {
       this.intakeError = e instanceof Error ? e.message : 'Could not load intake data.';
-    } finally { this.intakeLoading = false; }
+    } finally {
+      this.intakeLoading = false;
+    }
   }
 
   blankManualForm(): ManualForm {
@@ -174,20 +155,17 @@ export class AppComponent implements OnInit, AfterViewChecked {
     };
   }
 
-  async searchOccupations(query: string) {
+  searchOccupations(query: string) {
     this.roleSearchLoading = true;
     try {
-      const q = encodeURIComponent(query.trim());
-      this.occupations = await this.fetchJson<Occupation[]>(`/api/occupations?q=${q}`);
-    } catch {
-      this.occupations = [];
+      this.occupations = this.prototype.searchOccupations(query);
     } finally {
       this.roleSearchLoading = false;
     }
   }
 
   onRoleSearchInput() {
-    void this.searchOccupations(this.roleSearch);
+    this.searchOccupations(this.roleSearch);
   }
 
   selectedOccupationTitle(): string {
@@ -234,18 +212,17 @@ export class AppComponent implements OnInit, AfterViewChecked {
     const ok = ['.csv','.pdf','.doc','.docx'].some(e => this.selectedFile!.name.toLowerCase().endsWith(e));
     if (!ok) { this.uploadError = 'Supported: CSV, PDF, DOC, DOCX.'; return; }
     this.uploadLoading = true; this.uploadError = ''; this.uploadSuccess = '';
-    const fd = new FormData(); fd.append('file', this.selectedFile);
     try {
-      const rec = await this.fetchJson<IntakeDocument>('/api/intake/documents', { method:'POST', body:fd });
-      this.documents = [rec, ...this.documents];
+      const rec = await this.prototype.uploadDocument(this.selectedFile);
+      this.documents = this.prototype.listDocuments();
       const rowNote = rec.rowCount != null ? ` · ${rec.rowCount} employee row${rec.rowCount === 1 ? '' : 's'} detected` : '';
-      this.uploadSuccess = `${rec.originalFilename} uploaded to server${rowNote}.`;
+      this.uploadSuccess = `${rec.originalFilename} saved in prototype${rowNote}.`;
       this.selectedFile = null;
     } catch (e) { this.uploadError = e instanceof Error ? e.message : 'Upload failed.'; }
     finally { this.uploadLoading = false; }
   }
 
-  async submitManualEmployee() {
+  submitManualEmployee() {
     if (!this.manualForm.name.trim()) {
       this.manualError = 'Name is required.';
       return;
@@ -281,10 +258,8 @@ export class AppComponent implements OnInit, AfterViewChecked {
       documentId: this.manualForm.documentId ? Number(this.manualForm.documentId) : null,
     };
     try {
-      const rec = await this.fetchJson<AtRiskSubmission>('/api/intake/employees', {
-        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload),
-      });
-      this.submissions = [rec, ...this.submissions];
+      const rec = this.prototype.submitManualEmployee(payload);
+      this.submissions = this.prototype.listSubmissions();
       this.manualSuccess = `Saved details for ${rec.name}.`;
       this.resetManualForm();
     } catch (e) { this.manualError = e instanceof Error ? e.message : 'Submission failed.'; }
@@ -643,10 +618,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
   }
 
   downloadHrReport() {
-    const link = document.createElement('a');
-    link.href = '/api/reports/career-profile';
-    link.download = 'Ethan_Lim_Wei_Jie_Career_Profile.pdf';
-    link.click();
+    this.prototype.downloadCareerProfile();
   }
 
   downloadCsvTemplate() {
@@ -693,7 +665,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
     this.roleSearch = '';
     this.manualError = '';
     this.manualSuccess = '';
-    void this.searchOccupations('');
+    this.searchOccupations('');
   }
 
   intakeStatusTone(status: string): 'ok' | 'pending' | 'error' {

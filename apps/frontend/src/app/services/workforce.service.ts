@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import {
   Employee, Vacancy, MOCK_EMPLOYEES, MOCK_VACANCIES,
-  isSameField, computeMatchScore, getRoleDomain, getSkillAxes, getRoleProfile,
-} from '../mock-data/mock-data';
+  isSameField, computeMatchScore, getSkillAxes, getRoleProfile,
+} from '../mock-data';
 
 export interface MatchedVacancy extends Vacancy {
   matchType: 'same-field' | 'cross-role';

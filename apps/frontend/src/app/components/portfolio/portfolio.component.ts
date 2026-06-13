@@ -1,8 +1,9 @@
-import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { WorkforceService, EmployeePortfolio, MatchedVacancy } from '../../services/workforce.service';
-import { Employee, getSkillAxes, getRoleProfile, SkillAxis } from '../../mock-data/mock-data';
+import { Employee, getSkillAxes, getRoleProfile, SkillAxis } from '../../mock-data';
 import { RadarChartComponent, RadarSeries } from '../radar-chart/radar-chart.component';
+import { PrototypeDataService } from '../../services/prototype-data.service';
 
 interface SkillGapRow {
   skill: string;
@@ -468,6 +469,7 @@ export class PortfolioComponent implements OnChanges {
   portfolio: EmployeePortfolio | null = null;
   activeSection = 0;
   tabs = ['Personal Info', 'Skill Gap Analysis', 'HR Summary'];
+  private prototype = inject(PrototypeDataService);
 
   constructor(public svc: WorkforceService) {}
 
@@ -516,10 +518,7 @@ export class PortfolioComponent implements OnChanges {
   }
 
   downloadHrReport() {
-    const link = document.createElement('a');
-    link.href = '/api/reports/career-profile';
-    link.download = 'Ethan_Lim_Wei_Jie_Career_Profile.pdf';
-    link.click();
+    this.prototype.downloadCareerProfile();
   }
 
   riskNarrative(emp: Employee): string {

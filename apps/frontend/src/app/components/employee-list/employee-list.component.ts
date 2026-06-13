@@ -1,7 +1,7 @@
 import { Component, OnInit, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { WorkforceService } from '../../services/workforce.service';
-import { Employee } from '../../mock-data/mock-data';
+import { Employee } from '../../mock-data';
 
 @Component({
   selector: 'app-employee-list',

@@ -3,6 +3,7 @@
   <!-- ╔══════════════════════════════════════════════════════════════╗ -->
   <!-- ║  TOP NAV                                                      ║ -->
   <!-- ╚══════════════════════════════════════════════════════════════╝ -->
+
   <header class="topbar">
     <div class="topbar-left">
       <div class="logo">
@@ -100,7 +101,7 @@
       <div>
         <p class="intake-eyebrow">HR bulk intake</p>
         <h1>Employee Reassignment Upload</h1>
-        <p class="sub">When many employees need redeployment, collect their details in a spreadsheet and upload it here. Our server stores the file and prepares records for portfolio planning.</p>
+        <p class="sub">When many employees need redeployment, collect their details in a spreadsheet and upload it here. This prototype stores files locally in your browser session for portfolio planning.</p>
       </div>
       <button type="button" class="btn-ghost intake-refresh" [disabled]="intakeLoading" (click)="loadIntakeData()">
         {{ intakeLoading ? 'Refreshing…' : 'Refresh data' }}
@@ -153,7 +154,7 @@
         </div>
         <div>
           <div class="kpi-val">{{ processedDocumentCount }}</div>
-          <div class="kpi-lbl">Received on server</div>
+          <div class="kpi-lbl">Uploaded (demo)</div>
         </div>
       </div>
     </div>
@@ -170,7 +171,7 @@
       <div class="intake-step" [class.active]="intakeTab==='documents' && selectedFile" [class.done]="documents.length > 0">
         <span class="intake-step-num">2</span>
         <div>
-          <strong>Upload to server</strong>
+          <strong>Upload file</strong>
           <span>Send CSV or supporting HR documents (max 10 MB)</span>
         </div>
       </div>
@@ -291,7 +292,7 @@
                   [disabled]="uploadLoading || !selectedFile"
                   (click)="uploadDocument()"
                 >
-                  {{ uploadLoading ? 'Uploading to server…' : 'Upload to server' }}
+                  {{ uploadLoading ? 'Uploading…' : 'Upload file' }}
                 </button>
               </div>
             </div>
@@ -342,7 +343,7 @@
             <ol class="intake-steps-list">
               <li>Download the CSV template and fill one row per employee.</li>
               <li>Fill one row per employee — <code>current_role_id</code>, <code>skills</code>, and <code>departure_reason</code> are required.</li>
-              <li>Upload the completed file — we store it on the server.</li>
+              <li>Upload the completed file — it is saved in this prototype session.</li>
               <li>Open Portfolio to match skills and plan new assignments.</li>
             </ol>
           </div>
@@ -368,7 +369,7 @@
         <div class="intake-library-head">
           <div>
             <h3>Upload history</h3>
-            <p class="hint sm">{{ documents.length }} file{{ documents.length === 1 ? '' : 's' }} stored on server{{ totalCsvEmployeeRows ? (' · ' + totalCsvEmployeeRows + ' employee rows detected') : '' }}</p>
+            <p class="hint sm">{{ documents.length }} file{{ documents.length === 1 ? '' : 's' }} in prototype store{{ totalCsvEmployeeRows ? (' · ' + totalCsvEmployeeRows + ' employee rows detected') : '' }}</p>
           </div>
         </div>
 
