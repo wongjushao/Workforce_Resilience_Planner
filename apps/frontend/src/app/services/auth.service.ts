@@ -22,7 +22,7 @@ export class AuthService {
 
   constructor(private router: Router) {}
 
-  async login(email: string, password: string): Promise<{ success: boolean; error?: string }> {
+  async login(email: string, password: string, role: UserRole = 'job-seeker'): Promise<{ success: boolean; error?: string }> {
     this._isLoading.set(true);
     await this.delay(1600);
     this._isLoading.set(false);
@@ -32,14 +32,14 @@ export class AuthService {
         name: this.emailToName(email),
         username: email.split('@')[0],
         email,
-        role: 'job-seeker',
+        role,
       });
       return { success: true };
     }
     return { success: false, error: 'Incorrect email or password. Please try again.' };
   }
 
-  async loginWithGoogle(): Promise<{ success: boolean }> {
+  async loginWithGoogle(role: UserRole = 'job-seeker'): Promise<{ success: boolean }> {
     this._isLoading.set(true);
     await this.delay(1200);
     this._isLoading.set(false);
@@ -48,7 +48,7 @@ export class AuthService {
       name: 'Ahmad Fadzillah',
       username: 'ahmad_fadzillah',
       email: 'ahmad.fadzillah@gmail.com',
-      role: 'hr-leader',
+      role,
     });
     return { success: true };
   }

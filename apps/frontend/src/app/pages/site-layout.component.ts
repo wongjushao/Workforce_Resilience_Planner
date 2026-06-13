@@ -22,7 +22,16 @@ import { AuthService } from '../services/auth.service';
           <span>Talent<span class="brand-pivot">Pivot</span></span>
         </a>
         <div class="header-actions">
-          <a class="btn-header-cta" routerLink="/how-to-use">How to use?</a>
+          <!-- Job seeker / guest nav links -->
+          <ng-container *ngIf="!auth.isLoggedIn() || auth.user()?.role === 'job-seeker'">
+            <a class="btn-header-cta" routerLink="/jobs">Find Jobs</a>
+            <a class="btn-header-cta" routerLink="/how-to-use">How it works</a>
+          </ng-container>
+          <!-- Employer / HR nav links -->
+          <ng-container *ngIf="auth.isLoggedIn() && auth.user()?.role !== 'job-seeker'">
+            <a class="btn-header-cta btn-header-cta-employer" routerLink="/app">WRP Dashboard</a>
+            <a class="btn-header-cta" routerLink="/how-to-use">How it works</a>
+          </ng-container>
 
           <!-- Guest nav: not logged in -->
           <ng-container *ngIf="!auth.isLoggedIn()">
@@ -46,27 +55,64 @@ import { AuthService } from '../services/auth.service';
             <div class="user-dropdown" role="menu">
               <!-- User info -->
               <div class="user-dropdown-profile">
-                <div class="user-dropdown-avatar">{{ userInitials() }}</div>
+                <div class="user-dropdown-avatar" [class.avatar-employer]="auth.user()?.role !== 'job-seeker'">{{ userInitials() }}</div>
                 <div class="user-dropdown-info">
                   <span class="user-dropdown-name">{{ auth.user()?.name }}</span>
                   <span class="user-dropdown-email">{{ auth.user()?.email }}</span>
+                  <span class="user-dropdown-role-badge"
+                    [class.role-badge-employer]="auth.user()?.role !== 'job-seeker'">
+                    {{ auth.user()?.role === 'job-seeker' ? 'Job Seeker' : 'Employer / HR' }}
+                  </span>
                 </div>
               </div>
               <div class="user-dropdown-divider"></div>
               <p class="user-dropdown-eyebrow">Workspace</p>
-              <a class="user-dropdown-item" routerLink="/app" role="menuitem">
-                <span class="user-dropdown-icon" aria-hidden="true">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                    <path d="M4 14.5V19a1 1 0 0 0 1 1h5.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    <path d="M20 9.5V5a1 1 0 0 0-1-1h-5.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    <path d="M14 3h7v7M10 21H3v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </span>
-                <span class="user-dropdown-copy">
-                  <span class="user-dropdown-title">Launch App</span>
-                  <span class="user-dropdown-sub">Open the dashboard</span>
-                </span>
-              </a>
+
+              <!-- Job seeker links -->
+              <ng-container *ngIf="auth.user()?.role === 'job-seeker'">
+                <a class="user-dropdown-item" routerLink="/candidate" role="menuitem">
+                  <span class="user-dropdown-icon" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                      <path d="M20 21a8 8 0 0 0-16 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                      <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                  </span>
+                  <span class="user-dropdown-copy">
+                    <span class="user-dropdown-title">My Dashboard</span>
+                    <span class="user-dropdown-sub">Applications &amp; job matches</span>
+                  </span>
+                </a>
+                <a class="user-dropdown-item" routerLink="/profile" role="menuitem">
+                  <span class="user-dropdown-icon" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                  </span>
+                  <span class="user-dropdown-copy">
+                    <span class="user-dropdown-title">Edit Profile</span>
+                    <span class="user-dropdown-sub">Resume &amp; skills</span>
+                  </span>
+                </a>
+              </ng-container>
+
+              <!-- Employer / HR links -->
+              <ng-container *ngIf="auth.user()?.role !== 'job-seeker'">
+                <a class="user-dropdown-item user-dropdown-item-employer" routerLink="/app" role="menuitem">
+                  <span class="user-dropdown-icon" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                      <path d="M4 14.5V19a1 1 0 0 0 1 1h5.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                      <path d="M20 9.5V5a1 1 0 0 0-1-1h-5.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                      <path d="M14 3h7v7M10 21H3v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </span>
+                  <span class="user-dropdown-copy">
+                    <span class="user-dropdown-title">WRP Dashboard</span>
+                    <span class="user-dropdown-sub">Workforce Resilience Planner</span>
+                  </span>
+                </a>
+              </ng-container>
+
               <div class="user-dropdown-divider"></div>
               <button class="user-dropdown-signout" role="menuitem" (click)="auth.logout()">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
@@ -182,6 +228,30 @@ import { AuthService } from '../services/auth.service';
     .user-dropdown-info { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
     .user-dropdown-name { font-size: 0.875rem; font-weight: 800; color: #f8fbff; }
     .user-dropdown-email { font-size: 0.75rem; color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .user-dropdown-role-badge {
+      display: inline-block; margin-top: 0.3rem;
+      font-size: 0.6rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase;
+      padding: 2px 6px; border-radius: 4px; width: fit-content;
+      background: rgba(0,242,255,0.08); border: 1px solid rgba(0,242,255,0.2); color: #00f2ff;
+    }
+    .user-dropdown-role-badge.role-badge-employer {
+      background: rgba(112,0,255,0.1); border-color: rgba(112,0,255,0.25); color: #a78bfa;
+    }
+    .avatar-employer {
+      background: linear-gradient(135deg, rgba(112,0,255,0.3), rgba(167,139,250,0.35));
+      border-color: rgba(112,0,255,0.3);
+      color: #a78bfa;
+    }
+    .user-dropdown-item-employer:hover {
+      background: rgba(112,0,255,0.1);
+    }
+    .user-dropdown-item-employer:hover .user-dropdown-icon {
+      background: linear-gradient(135deg, rgba(112,0,255,0.28), rgba(167,139,250,0.22));
+      box-shadow: inset 0 0 0 1px rgba(112,0,255,0.25);
+      color: #a78bfa;
+    }
+    .btn-header-cta-employer { color: #c4b5fd !important; }
+    .btn-header-cta-employer:hover { color: #a78bfa !important; background: rgba(112,0,255,0.1) !important; }
     .user-dropdown-divider { height: 1px; background: rgba(255,255,255,0.07); margin: 0.35rem 0; }
     .user-dropdown-signout {
       display: flex; align-items: center; gap: 0.65rem;

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { AuthLayoutComponent } from '../auth-layout.component';
 import { AuthService } from '../../services/auth.service';
+import type { UserRole } from '../../services/auth.service';
 
 @Component({
   selector: 'app-login',
@@ -13,10 +14,31 @@ import { AuthService } from '../../services/auth.service';
     <app-auth-layout>
       <div class="auth-card glass">
 
+        <!-- Role tabs -->
+        <div class="role-tabs">
+          <button class="role-tab" [class.active-seeker]="loginRole() === 'job-seeker'" (click)="loginRole.set('job-seeker')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+              <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            Job Seeker
+          </button>
+          <button class="role-tab" [class.active-employer]="loginRole() === 'employer'" (click)="loginRole.set('employer')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+              <rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" stroke-width="2"/>
+              <path d="M8 7V5a4 4 0 0 1 8 0v2" stroke="currentColor" stroke-width="2"/>
+              <path d="M12 12v4M10 14h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            Employer / HR
+          </button>
+        </div>
+
         <!-- Heading -->
         <div class="auth-head">
           <h1 class="auth-h1">Welcome back</h1>
-          <p class="auth-sub">Sign in to your TalentPivot account</p>
+          <p class="auth-sub">
+            {{ loginRole() === 'job-seeker' ? 'Sign in to your Career OS account' : 'Sign in to TalentPivot WRP' }}
+          </p>
         </div>
 
         <!-- Google button -->
@@ -474,6 +496,45 @@ import { AuthService } from '../../services/auth.service';
     }
     .auth-switch-link:hover { color: #7dd3fc; }
 
+    /* Role tabs */
+    .role-tabs {
+      display: flex;
+      gap: 0.35rem;
+      margin-bottom: 1.5rem;
+      background: rgba(255,255,255,0.03);
+      border-radius: 12px;
+      padding: 0.28rem;
+      border: 1px solid rgba(255,255,255,0.07);
+    }
+    .role-tab {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      height: 2.3rem;
+      border-radius: 9px;
+      border: none;
+      background: transparent;
+      color: #64748b;
+      font-size: 0.84rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 180ms ease;
+    }
+    .role-tab:hover { color: #94a3b8; background: rgba(255,255,255,0.04); }
+    .role-tab.active-seeker {
+      background: rgba(0,242,255,0.1);
+      color: #00f2ff;
+      box-shadow: inset 0 0 0 1px rgba(0,242,255,0.25);
+    }
+    .role-tab.active-employer {
+      background: rgba(112,0,255,0.15);
+      color: #a78bfa;
+      box-shadow: inset 0 0 0 1px rgba(112,0,255,0.3);
+    }
+
     @media (max-width: 640px) {
       .auth-card { padding: 1.75rem 1.25rem; }
     }
@@ -493,15 +554,29 @@ export class LoginComponent {
   captchaVerified = signal(false);
   captchaLoading = signal(false);
   errorMsg = signal('');
+  loginRole = signal<'job-seeker' | 'employer'>('job-seeker');
 
-  private returnUrl = '/app';
+  private returnUrl: string | null = null;
 
   constructor(
     private auth: AuthService,
     private router: Router,
     private route: ActivatedRoute,
   ) {
-    this.returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? '/app';
+    const url = this.route.snapshot.queryParamMap.get('returnUrl');
+    if (url) {
+      this.returnUrl = url;
+      if (url.startsWith('/app')) {
+        this.loginRole.set('employer');
+      } else if (url.startsWith('/candidate') || url.startsWith('/profile')) {
+        this.loginRole.set('job-seeker');
+      }
+    }
+  }
+
+  private get destination(): string {
+    if (this.returnUrl) return this.returnUrl;
+    return this.loginRole() === 'employer' ? '/app' : '/candidate';
   }
 
   verifyCaptcha() {
@@ -518,10 +593,11 @@ export class LoginComponent {
     this.googleLoading.set(true);
     this.loading.set(true);
     this.errorMsg.set('');
-    await this.auth.loginWithGoogle();
+    const role: UserRole = this.loginRole() === 'employer' ? 'hr-leader' : 'job-seeker';
+    await this.auth.loginWithGoogle(role);
     this.googleLoading.set(false);
     this.loading.set(false);
-    this.router.navigateByUrl(this.returnUrl);
+    this.router.navigateByUrl(this.destination);
   }
 
   async onSubmit() {
@@ -529,11 +605,12 @@ export class LoginComponent {
     this.errorMsg.set('');
     this.submitLoading.set(true);
     this.loading.set(true);
-    const result = await this.auth.login(this.email, this.password);
+    const role: UserRole = this.loginRole() === 'employer' ? 'hr-leader' : 'job-seeker';
+    const result = await this.auth.login(this.email, this.password, role);
     this.submitLoading.set(false);
     this.loading.set(false);
     if (result.success) {
-      this.router.navigateByUrl(this.returnUrl);
+      this.router.navigateByUrl(this.destination);
     } else {
       this.errorMsg.set(result.error ?? 'Something went wrong. Please try again.');
       this.captchaVerified.set(false);

@@ -9,7 +9,11 @@ import { SignupComponent } from './pages/signup/signup.component';
 import { ForgotPasswordComponent } from './pages/forgot-password/forgot-password.component';
 import { ForgotUsernameComponent } from './pages/forgot-username/forgot-username.component';
 import { AppComponent } from './app.component';
-import { authGuard } from './guards/auth.guard';
+import { JobsComponent } from './pages/jobs/jobs.component';
+import { CandidateDashboardComponent } from './pages/candidate/candidate-dashboard.component';
+import { ProfileComponent } from './pages/profile/profile.component';
+import { jobSeekerGuard } from './guards/job-seeker.guard';
+import { employerGuard } from './guards/employer.guard';
 
 export const routes: Routes = [
   // Marketing / public pages
@@ -19,16 +23,23 @@ export const routes: Routes = [
   { path: 'privacy',    component: PrivacyComponent },
   { path: 'terms',      component: TermsComponent },
 
+  // Career OS — public job search
+  { path: 'jobs', component: JobsComponent },
+
+  // Career OS — authenticated job seeker pages
+  { path: 'candidate', component: CandidateDashboardComponent, canActivate: [jobSeekerGuard] },
+  { path: 'profile',   component: ProfileComponent,            canActivate: [jobSeekerGuard] },
+
   // Auth pages
   { path: 'login',           component: LoginComponent },
   { path: 'signup',          component: SignupComponent },
   { path: 'forgot-password', component: ForgotPasswordComponent },
   { path: 'forgot-username', component: ForgotUsernameComponent },
 
-  // The existing dashboard SPA lives at /app — requires authentication
-  { path: 'app', component: AppComponent, canActivate: [authGuard] },
+  // TalentPivot WRP employer dashboard — employer/HR only
+  { path: 'app', component: AppComponent, canActivate: [employerGuard] },
 
   // Default: go to the landing page
-  { path: '',           redirectTo: 'home', pathMatch: 'full' },
-  { path: '**',         redirectTo: 'home' },
+  { path: '',   redirectTo: 'home', pathMatch: 'full' },
+  { path: '**', redirectTo: 'home' },
 ];
