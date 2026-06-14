@@ -10,12 +10,10 @@ import { BodyClassService } from '../services/body-class.service';
     <div class="auth-page">
       <header class="auth-header">
         <a routerLink="/home" class="brand-mark">
-          <span class="brand-icon" aria-hidden="true">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3Z" stroke="currentColor" stroke-width="2"/>
-              <path d="M12 8v8M8 10.5l4-2.5 4 2.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-          </span>
+          <svg class="brand-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
+                  stroke="#00f2ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
           <span>Talent<span class="brand-pivot">Pivot</span></span>
         </a>
         <a routerLink="/home" class="back-link">
@@ -51,12 +49,8 @@ import { BodyClassService } from '../services/body-class.service';
       font-family: "Cabinet Grotesk","Satoshi",sans-serif; font-weight: 900;
       font-size: 1.45rem; color: #f8fbff; text-decoration: none;
     }
-    .brand-pivot { color: #7dd3fc; }
-    .brand-icon {
-      display: inline-grid; width: 2rem; height: 2rem; place-items: center;
-      border-radius: 999px; background: linear-gradient(135deg,#00f2ff,#7000ff);
-      color: #fff; box-shadow: 0 0 24px rgba(0,242,255,0.35); flex-shrink: 0;
-    }
+    .brand-pivot { color: #00f2ff; }
+    .brand-icon { display: inline-grid; place-items: center; flex-shrink: 0; }
     .back-link {
       display: inline-flex; align-items: center; gap: 0.4rem;
       font-size: 0.875rem; color: #94a3b8; text-decoration: none;

@@ -40,7 +40,7 @@
 .topbar-left { display: flex; align-items: center; gap: 16px; }
 
 .logo { display: flex; align-items: center; gap: 8px; }
-.logo-icon { font-size: 1.2rem; color: #00f2ff; filter: drop-shadow(0 0 6px rgba(0,242,255,0.5)); }
+.logo-icon { display: inline-grid; place-items: center; flex-shrink: 0; filter: drop-shadow(0 0 6px rgba(0,242,255,0.5)); }
 .logo-text { font-size: 0.95rem; font-weight: 700; color: #f1f5f9; letter-spacing: -0.02em; }
 .logo-text em { font-style: normal; color: #00f2ff; }
 

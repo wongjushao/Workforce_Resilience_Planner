@@ -605,8 +605,6 @@ import { AuthService } from '../../services/auth.service';
       <span class="cd-sep"></span>
       <nav class="cd-nav">
         <button [class.active]="activeTab() === 'overview'" (click)="activeTab.set('overview')">Overview</button>
-        <button [class.active]="activeTab() === 'applications'" (click)="activeTab.set('applications')">Applications</button>
-        <button [class.active]="activeTab() === 'matches'" (click)="activeTab.set('matches')">Job Matches</button>
       </nav>
     </div>
     <div class="cd-top-right">
