@@ -152,14 +152,96 @@ import { SiteLayoutComponent } from '../site-layout.component';
           </div>
         </section>
 
-        <!-- CTA -->
+        <!-- Career OS — For Job Seekers -->
+        <section class="content-section">
+          <div class="reveal section-intro">
+            <p class="section-eyebrow">Career OS · For Job Seekers</p>
+            <h2 class="section-h2">Your career, intelligently matched.</h2>
+            <p class="section-body">Career OS uses the same AI engine that powers TalentPivot — turned around to serve you. Find roles you're genuinely suited for, not just keyword matches.</p>
+          </div>
+          <div class="cos-feature-grid">
+            <div class="cos-feature glass reveal tilt-card">
+              <div class="cos-feature-icon cyan-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              </div>
+              <h3 class="cos-feature-h3">AI Job Matching</h3>
+              <p class="cos-feature-body">Every listing gets a match score against your skill graph. No more guessing if you're a fit — you see it instantly.</p>
+            </div>
+            <div class="cos-feature glass reveal tilt-card">
+              <div class="cos-feature-icon purple-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" stroke="currentColor" stroke-width="2"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              </div>
+              <h3 class="cos-feature-h3">Resume Builder</h3>
+              <p class="cos-feature-body">Build a structured profile that speaks to ATS systems and human recruiters alike. Export as a polished PDF.</p>
+            </div>
+            <div class="cos-feature glass reveal tilt-card">
+              <div class="cos-feature-icon green-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M22 4 12 14.01l-3-3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <h3 class="cos-feature-h3">Application Tracker</h3>
+              <p class="cos-feature-body">Track every application from sent to offer in a visual pipeline. Get notified on status changes in real time.</p>
+            </div>
+            <div class="cos-feature glass reveal tilt-card">
+              <div class="cos-feature-icon cyan-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <h3 class="cos-feature-h3">Skill Gap Insights</h3>
+              <p class="cos-feature-body">See exactly which skills are holding you back from top roles — and get learning paths to bridge the gap fast.</p>
+            </div>
+          </div>
+
+          <!-- Jobs preview strip -->
+          <div class="jobs-preview-strip glass reveal">
+            <div class="jps-header">
+              <div>
+                <p class="jps-eyebrow">Live Listings · AI-Matched</p>
+                <h3 class="jps-h3">Roles waiting for someone like you</h3>
+              </div>
+              <a class="btn-primary" routerLink="/jobs">Browse All Jobs →</a>
+            </div>
+            <div class="jps-cards">
+              <div class="jps-card">
+                <div class="jps-card-top"><span class="jps-logo">🟢</span><span class="jps-match" style="color:#22c55e">96% match</span></div>
+                <div class="jps-role">Senior Frontend Engineer</div>
+                <div class="jps-company">Grab · Kuala Lumpur · Hybrid</div>
+                <div class="jps-salary">RM 8,000 – 12,000 / mo</div>
+              </div>
+              <div class="jps-card">
+                <div class="jps-card-top"><span class="jps-logo">◈</span><span class="jps-match" style="color:#22c55e">99% match</span></div>
+                <div class="jps-role">HR Analytics Lead</div>
+                <div class="jps-company">TalentPivot · Remote · Full-time</div>
+                <div class="jps-salary">RM 10,000 – 16,000 / mo</div>
+              </div>
+              <div class="jps-card">
+                <div class="jps-card-top"><span class="jps-logo">🔵</span><span class="jps-match" style="color:#22c55e">91% match</span></div>
+                <div class="jps-role">Data Scientist – AI/ML</div>
+                <div class="jps-company">Maxis · Kuala Lumpur · Hybrid</div>
+                <div class="jps-salary">RM 9,000 – 13,000 / mo</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Dual CTA -->
         <section class="content-section cta-section">
-          <div class="glass reveal rounded-2xl cta-inner">
-            <h2 class="cta-h2">Ready to map your workforce?</h2>
-            <p class="section-body cta-body">Start with the dashboard to see which employees are at risk and which internal roles are available right now.</p>
-            <div class="hero-cta-row">
-              <a class="btn-primary" routerLink="/app">Launch Dashboard</a>
-              <a class="btn-secondary" routerLink="/how-to-use">How it works</a>
+          <div class="dual-cta-grid">
+            <div class="glass reveal rounded-2xl cta-inner cta-seeker">
+              <p class="cta-eyebrow cyan-text">For Job Seekers</p>
+              <h2 class="cta-h2">Find your next role, matched by AI.</h2>
+              <p class="section-body cta-body">Browse thousands of listings, apply in seconds, and track your pipeline — all from one dashboard.</p>
+              <div class="hero-cta-row">
+                <a class="btn-primary" routerLink="/jobs">Browse Jobs</a>
+                <a class="btn-secondary" routerLink="/signup">Create Profile</a>
+              </div>
+            </div>
+            <div class="glass reveal rounded-2xl cta-inner cta-employer">
+              <p class="cta-eyebrow purple-text">For Employers</p>
+              <h2 class="cta-h2">Map your workforce resilience.</h2>
+              <p class="section-body cta-body">Use TalentPivot's WRP module to identify at-risk employees, match internal talent, and plan redeployment before disruption hits.</p>
+              <div class="hero-cta-row">
+                <a class="btn-primary-purple" routerLink="/app">Launch WRP Dashboard</a>
+                <a class="btn-secondary" routerLink="/how-to-use">How it works</a>
+              </div>
             </div>
           </div>
         </section>
@@ -310,12 +392,61 @@ import { SiteLayoutComponent } from '../site-layout.component';
     .who-icon { font-size: 2rem; margin-bottom: 1rem; }
     .who-h3 { margin: 0 0 0.75rem; font-size: 1.35rem; font-weight: 900; font-family: "Cabinet Grotesk","Satoshi",sans-serif; color: #f8fbff; }
 
+    /* Career OS seeker section */
+    .cos-feature-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 32px;
+    }
+    @media (min-width: 900px) { .cos-feature-grid { grid-template-columns: repeat(4, 1fr); } }
+    .cos-feature { padding: 28px 24px; border-radius: 16px; }
+    .cos-feature-icon {
+      width: 48px; height: 48px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center; margin-bottom: 16px;
+    }
+    .cyan-icon { background: rgba(0,200,220,0.12); color: #00d4e8; }
+    .purple-icon { background: rgba(112,0,255,0.12); color: #b38cff; }
+    .green-icon { background: rgba(34,197,94,0.12); color: #4ade80; }
+    .cos-feature-h3 { margin: 0 0 10px; font-size: 1.05rem; font-weight: 800; font-family: "Cabinet Grotesk","Satoshi",sans-serif; color: #f8fbff; }
+    .cos-feature-body { margin: 0; font-size: 0.88rem; color: #aab7ca; line-height: 1.65; }
+
+    /* Jobs preview strip */
+    .jobs-preview-strip { padding: 28px 32px; border-radius: 20px; }
+    .jps-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+    .jps-eyebrow { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: #00f2ff; margin: 0 0 6px; }
+    .jps-h3 { margin: 0; font-size: 1.2rem; font-weight: 800; font-family: "Cabinet Grotesk","Satoshi",sans-serif; color: #f8fbff; }
+    .jps-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    @media (max-width: 700px) { .jps-cards { grid-template-columns: 1fr; } }
+    .jps-card {
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px; padding: 16px;
+    }
+    .jps-card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .jps-logo { font-size: 1.4rem; }
+    .jps-match { font-size: 0.78rem; font-weight: 700; }
+    .jps-role { font-size: 0.95rem; font-weight: 700; color: #f1f5f9; margin-bottom: 4px; }
+    .jps-company { font-size: 0.82rem; color: #7e8fa2; margin-bottom: 8px; }
+    .jps-salary { font-size: 0.84rem; font-weight: 600; color: #00d4e8; }
+
+    /* Dual CTA */
+    .dual-cta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 768px) { .dual-cta-grid { grid-template-columns: 1fr; } }
+    .cta-eyebrow { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; margin: 0 0 12px; }
+    .cyan-text { color: #00f2ff; }
+    .purple-text { color: #b38cff; }
+    .btn-primary-purple {
+      display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+      min-height: 2.75rem; border-radius: 8px; padding: 0 1.5rem;
+      background: linear-gradient(135deg, #7000ff, #b38cff); color: #fff; font-weight: 800; text-decoration: none;
+      box-shadow: 0 0 20px rgba(112,0,255,0.4);
+      transition: transform 180ms ease, box-shadow 180ms ease;
+    }
+    .btn-primary-purple:hover { transform: translateY(-2px); box-shadow: 0 0 28px rgba(112,0,255,0.6); }
+
     /* CTA */
     .cta-section { padding-bottom: 5rem; }
-    .cta-inner { padding: 3rem 2rem; text-align: center; }
-    .cta-h2 { margin: 0; font-family: "Cabinet Grotesk","Satoshi",sans-serif; font-weight: 900; font-size: clamp(2rem, 4vw, 3rem); color: #f8fbff; }
-    .cta-body { max-width: 36rem; margin: 1rem auto 0; }
-    .cta-inner .hero-cta-row { justify-content: center; }
+    .cta-inner { padding: 3rem 2rem; text-align: left; }
+    .cta-h2 { margin: 0; font-family: "Cabinet Grotesk","Satoshi",sans-serif; font-weight: 900; font-size: clamp(1.6rem, 3vw, 2.4rem); color: #f8fbff; }
+    .cta-body { max-width: 36rem; margin: 1rem 0 0; }
+    .cta-inner .hero-cta-row { justify-content: flex-start; }
 
     /* Buttons */
     .btn-primary {

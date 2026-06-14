@@ -13,8 +13,60 @@ import { AuthService } from '../../services/auth.service';
     <app-auth-layout>
       <div class="signup-wrap">
 
-        <!-- Step indicator -->
-        <div class="step-indicator">
+        <!-- ── Step 0: Role selection ── -->
+        <div *ngIf="step() === 0" class="role-select-card glass">
+          <div class="auth-head" style="text-align:center">
+            <h1 class="auth-h1">Join TalentPivot</h1>
+            <p class="auth-sub">Who are you? Choose your path to get started.</p>
+          </div>
+          <div class="role-options">
+
+            <!-- Job Seeker -->
+            <button class="role-option role-option-seeker" type="button" (click)="selectRole('job-seeker')">
+              <div class="role-option-icon role-icon-seeker">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+                  <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="role-option-body">
+                <strong>I'm looking for a job</strong>
+                <p>Find AI-matched roles, track your applications, build your profile</p>
+                <span class="role-option-tag role-tag-seeker">Career OS · Job Seeker</span>
+              </div>
+              <svg class="role-option-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+
+            <!-- Employer / HR -->
+            <button class="role-option role-option-employer" type="button" (click)="selectRole('employer')">
+              <div class="role-option-icon role-icon-employer">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+                  <rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" stroke-width="2"/>
+                  <path d="M8 7V5a4 4 0 0 1 8 0v2" stroke="currentColor" stroke-width="2"/>
+                  <path d="M9 12h6M12 12v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="role-option-body">
+                <strong>I'm hiring or managing a team</strong>
+                <p>Post jobs, evaluate candidates, run workforce resilience planning</p>
+                <span class="role-option-tag role-tag-employer">TalentPivot WRP · Employer</span>
+              </div>
+              <svg class="role-option-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+
+          </div>
+          <p class="auth-switch" style="text-align:center;margin-top:1.5rem">
+            Already have an account?
+            <a routerLink="/login" class="auth-switch-link">Sign in</a>
+          </p>
+        </div>
+
+        <!-- Step indicator (steps 1 & 2 only) -->
+        <div *ngIf="step() > 0" class="step-indicator">
           <div class="step" [class.step-active]="step() === 1" [class.step-done]="step() > 1">
             <span class="step-num">
               <svg *ngIf="step() > 1" width="12" height="12" viewBox="0 0 24 24" fill="none">
@@ -33,9 +85,19 @@ import { AuthService } from '../../services/auth.service';
 
         <!-- ── Step 1: Account details ── -->
         <div *ngIf="step() === 1" class="auth-card glass">
+          <button class="btn-back" type="button" (click)="step.set(0)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <path d="M19 12H5M5 12l7-7M5 12l7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Change role
+          </button>
           <div class="auth-head">
             <h1 class="auth-h1">Create your account</h1>
-            <p class="auth-sub">Join TalentPivot — it's free to get started</p>
+            <p class="auth-sub">
+              <span class="role-badge" [class.role-badge-employer]="selectedRole() === 'employer'">
+                {{ selectedRole() === 'employer' ? 'Employer / HR account' : 'Job Seeker account' }}
+              </span>
+            </p>
           </div>
 
           <!-- Google -->
@@ -613,14 +675,95 @@ import { AuthService } from '../../services/auth.service';
     }
     .auth-switch-link:hover { color: #7dd3fc; }
 
+    /* ── Role selection (step 0) ── */
+    .role-select-card {
+      width: 100%;
+      max-width: 30rem;
+      padding: 2.25rem;
+      border-radius: 1.5rem;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.1);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 32px 80px rgba(0,0,0,0.32);
+    }
+    .role-options { display: flex; flex-direction: column; gap: 0.85rem; margin-top: 1.5rem; }
+    .role-option {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      width: 100%;
+      padding: 1.1rem 1.25rem;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.03);
+      cursor: pointer;
+      text-align: left;
+      transition: all 200ms ease;
+      font-family: inherit;
+    }
+    .role-option:hover { transform: translateY(-2px); }
+    .role-option-seeker:hover {
+      border-color: rgba(0,242,255,0.35);
+      background: rgba(0,242,255,0.05);
+      box-shadow: 0 8px 32px rgba(0,242,255,0.1);
+    }
+    .role-option-employer:hover {
+      border-color: rgba(112,0,255,0.35);
+      background: rgba(112,0,255,0.06);
+      box-shadow: 0 8px 32px rgba(112,0,255,0.1);
+    }
+    .role-option-icon {
+      width: 3rem; height: 3rem; border-radius: 12px;
+      display: inline-grid; place-items: center; flex-shrink: 0;
+    }
+    .role-icon-seeker { background: rgba(0,242,255,0.1); color: #00f2ff; border: 1px solid rgba(0,242,255,0.2); }
+    .role-icon-employer { background: rgba(112,0,255,0.15); color: #a78bfa; border: 1px solid rgba(112,0,255,0.25); }
+    .role-option-body { flex: 1; min-width: 0; }
+    .role-option-body strong { display: block; font-size: 0.95rem; font-weight: 700; color: #f1f5f9; margin-bottom: 0.25rem; }
+    .role-option-body p { margin: 0; font-size: 0.8rem; color: #64748b; line-height: 1.5; }
+    .role-option-tag {
+      display: inline-block; margin-top: 0.4rem;
+      font-size: 0.62rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase;
+      padding: 2px 7px; border-radius: 4px;
+    }
+    .role-tag-seeker { background: rgba(0,242,255,0.08); border: 1px solid rgba(0,242,255,0.18); color: #00f2ff; }
+    .role-tag-employer { background: rgba(112,0,255,0.1); border: 1px solid rgba(112,0,255,0.25); color: #a78bfa; }
+    .role-option-arrow { color: #334155; flex-shrink: 0; transition: color 200ms ease, transform 200ms ease; }
+    .role-option:hover .role-option-arrow { transform: translateX(3px); }
+    .role-option-seeker:hover .role-option-arrow { color: #00f2ff; }
+    .role-option-employer:hover .role-option-arrow { color: #a78bfa; }
+
+    /* ── Back button ── */
+    .btn-back {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      background: none; border: none; cursor: pointer; font-family: inherit;
+      font-size: 0.8rem; font-weight: 600; color: #475569;
+      padding: 0; margin-bottom: 1.25rem;
+      transition: color 180ms ease;
+    }
+    .btn-back:hover { color: #94a3b8; }
+
+    /* ── Role badge in step 1 heading ── */
+    .role-badge {
+      display: inline-block;
+      font-size: 0.72rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+      padding: 3px 9px; border-radius: 5px;
+      background: rgba(0,242,255,0.08); border: 1px solid rgba(0,242,255,0.2); color: #00f2ff;
+    }
+    .role-badge-employer {
+      background: rgba(112,0,255,0.1); border-color: rgba(112,0,255,0.25); color: #a78bfa;
+    }
+
     @media (max-width: 640px) {
-      .auth-card { padding: 1.75rem 1.25rem; }
+      .auth-card, .role-select-card { padding: 1.75rem 1.25rem; }
       .step-connector { width: 3rem; }
     }
   `]
 })
 export class SignupComponent {
-  step = signal(1);
+  step = signal(0);
+  selectedRole = signal<'job-seeker' | 'employer' | null>(null);
 
   name = '';
   username = '';
@@ -702,6 +845,11 @@ export class SignupComponent {
 
   constructor(private auth: AuthService, private router: Router) {}
 
+  selectRole(role: 'job-seeker' | 'employer') {
+    this.selectedRole.set(role);
+    this.step.set(1);
+  }
+
   /* Touch all fields, then advance only if valid */
   tryProceed() {
     this.nameTouched.set(true);
@@ -727,25 +875,27 @@ export class SignupComponent {
     if (this.loading()) return;
     this.googleLoading.set(true);
     this.loading.set(true);
-    await this.auth.loginWithGoogle();
+    const role = this.selectedRole() === 'employer' ? 'hr-leader' : 'job-seeker';
+    await this.auth.loginWithGoogle(role);
     this.googleLoading.set(false);
     this.loading.set(false);
-    this.router.navigate(['/app']);
+    this.router.navigate([role === 'job-seeker' ? '/candidate' : '/app']);
   }
 
   async onSubmit() {
     if (!this.canSubmit() || this.loading()) return;
     this.loading.set(true);
+    const role = this.selectedRole() === 'employer' ? 'hr-leader' : 'job-seeker';
     const result = await this.auth.signup({
       name: this.name,
       username: this.username,
       email: this.email,
       password: this.password,
-      role: 'job-seeker',
+      role,
     });
     this.loading.set(false);
     if (result.success) {
-      this.router.navigate(['/app']);
+      this.router.navigate([role === 'job-seeker' ? '/candidate' : '/app']);
     } else {
       this.errorMsg.set(result.error ?? 'Something went wrong. Please try again.');
     }
